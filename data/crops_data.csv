@@ -1,0 +1,11 @@
+crop_name,planting_season_start,planting_season_end,harvest_season_start,harvest_season_end,optimal_temperature,optimal_rainfall,regions
+Manioc,Mars,Mai,Novembre,Janvier,25-30,1500-2000,Woleu-Ntem|Ogooué-Ivindo|Haut-Ogooué
+Banane plantain,Toute l'année,Toute l'année,12-18 mois après plantation,12-18 mois après plantation,24-32,1500-2500,Estuaire|Woleu-Ntem|Ogooué-Ivindo
+Cacao,Mars,Mai,Octobre,Décembre,22-30,1500-2500,Woleu-Ntem|Ogooué-Ivindo
+Café,Mars,Mai,Novembre,Janvier,18-25,1500-2000,Woleu-Ntem|Haut-Ogooué
+Maïs,Février,Mars,Juin,Juillet,20-30,900-1500,Haut-Ogooué|Moyen-Ogooué
+Arachide,Février,Mars,Mai,Juin,22-28,500-1000,Haut-Ogooué|Ogooué-Lolo
+Igname,Février,Mars,Octobre,Décembre,25-30,1200-2000,Woleu-Ntem|Ogooué-Ivindo
+Canne à sucre,Mars,Mai,12-16 mois après plantation,12-16 mois après plantation,24-32,1500-2500,Haut-Ogooué|Moyen-Ogooué
+Palmier à huile,Toute l'année,Toute l'année,3-4 ans après plantation,Toute l'année,24-30,2000-3000,Ogooué-Maritime|Estuaire
+Hévéa,Mars,Mai,6-7 ans après plantation,Toute l'année,24-30,2000-3000,Ogooué-Maritime|Estuaire

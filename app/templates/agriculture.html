@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Services agricoles</h1>
+<p>Services météorologiques adaptés pour l'agriculture gabonaise.</p>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Recommandations agricoles pour ce mois</h5>
+            </div>
+            <div class="card-body">
+                {% if recommendations %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Culture</th>
+                                <th>Action recommandée</th>
+                                <th>Régions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for recommendation in recommendations %}
+                            <tr>
+                                <td>{{ recommendation.crop }}</td>
+                                <td>{{ recommendation.action }}</td>
+                                <td>{{ recommendation.regions }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-center">Aucune recommandation disponible pour ce mois.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Calendrier agricole</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Culture</th>
+                                <th>Période de plantation</th>
+                                <th>Période de récolte</th>
+                                <th>Température optimale (°C)</th>
+                                <th>Pluviométrie optimale (mm/an)</th>
+                                <th>Régions principales</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for crop in crops %}
+                            <tr>
+                                <td>{{ crop.crop_name }}</td>
+                                <td>
+                                    {% if crop.planting_season_start == crop.planting_season_end %}
+                                    {{ crop.planting_season_start }}
+                                    {% else %}
+                                    {{ crop.planting_season_start }} à {{ crop.planting_season_end }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if crop.harvest_season_start == crop.harvest_season_end %}
+                                    {{ crop.harvest_season_start }}
+                                    {% else %}
+                                    {{ crop.harvest_season_start }} à {{ crop.harvest_season_end }}
+                                    {% endif %}
+                                </td>
+                                <td>{{ crop.optimal_temperature }}</td>
+                                <td>{{ crop.optimal_rainfall }}</td>
+                                <td>{{ crop.regions.replace('|', ', ') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Conditions météorologiques actuelles</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for station in stations %}
+                    {% if station.id in latest_data %}
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5>{{ station.name }}</h5>
+                                <small>{{ station.region }}</small>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Température:</strong> {{ latest_data[station.id].temperature|round(1) }}°C</p>
+                                <p><strong>Humidité:</strong> {{ latest_data[station.id].humidity|round(1) }}%</p>
+                                <p><strong>Précipitations:</strong> {{ latest_data[station.id].precipitation|round(1) }} mm</p>
+                                
+                                <div class="mt-3">
+                                    <h6>État des sols (estimation):</h6>
+                                    {% if latest_data[station.id].precipitation > 10 %}
+                                    <div class="alert alert-info">Sol très humide - Risque d'engorgement</div>
+                                    {% elif latest_data[station.id].precipitation > 5 %}
+                                    <div class="alert alert-success">Sol bien hydraté - Conditions favorables</div>
+                                    {% elif latest_data[station.id].precipitation > 0 %}
+                                    <div class="alert alert-warning">Sol moyennement humide</div>
+                                    {% else %}
+                                    <div class="alert alert-danger">Sol sec - Arrosage recommandé</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<div class="row mt-4">
+<div class="col-md-12">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Conseils agricoles</h5>
+        </div>
+        <div class="card-body">
+            <div class="accordion" id="accordionAgricole">
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingOne">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                            Protection contre les fortes pluies
+                        </button>
+                    </h2>
+                    <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#accordionAgricole">
+                        <div class="accordion-body">
+                            <p>Pour protéger vos cultures contre les fortes pluies typiques du climat gabonais :</p>
+                            <ul>
+                                <li>Aménagez des canaux de drainage autour des parcelles</li>
+                                <li>Utilisez des cultures de couverture pour réduire l'érosion</li>
+                                <li>Pratiquez la culture sur buttes ou sur billons pour les tubercules</li>
+                                <li>Diversifiez les espèces plantées pour réduire les risques</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingTwo">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">
+                            Gestion des périodes sèches
+                        </button>
+                    </h2>
+                    <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionAgricole">
+                        <div class="accordion-body">
+                            <p>Pour optimiser la gestion de l'eau pendant les périodes moins pluvieuses :</p>
+                            <ul>
+                                <li>Pratiquez le paillage (mulching) pour conserver l'humidité du sol</li>
+                                <li>Installez des systèmes de récupération d'eau de pluie</li>
+                                <li>Privilégiez l'arrosage tôt le matin ou en fin d'après-midi</li>
+                                <li>Utilisez des variétés locales adaptées aux conditions climatiques</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingThree">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">
+                            Techniques agroforestières
+                        </button>
+                    </h2>
+                    <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#accordionAgricole">
+                        <div class="accordion-body">
+                            <p>L'agroforesterie est particulièrement adaptée au contexte gabonais :</p>
+                            <ul>
+                                <li>Associez des arbres fruitiers avec des cultures vivrières</li>
+                                <li>Intégrez des légumineuses arbustives pour enrichir le sol</li>
+                                <li>Créez des systèmes multi-étagés imitant la structure forestière</li>
+                                <li>Préservez certains arbres natifs dans les parcelles cultivées</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}

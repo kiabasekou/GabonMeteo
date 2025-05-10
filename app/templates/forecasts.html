@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    #map {
+        height: 400px;
+        width: 100%;
+    }
+    .forecast-card {
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    .forecast-card:hover {
+        transform: translateY(-5px);
+    }
+    .forecast-day {
+        font-weight: bold;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Prévisions météorologiques</h1>
+<p>Consultez les prévisions météorologiques pour les principales villes du Gabon.</p>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Carte des prévisions</h5>
+            </div>
+            <div class="card-body">
+                <div id="map"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    {% for station in stations %}
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">{{ station.name }}</h5>
+                <small>{{ station.region }}</small>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for day in forecasts[station.id] %}
+                    <div class="col-md-4">
+                        <div class="card forecast-card">
+                            <div class="card-body p-2 text-center">
+                                <p class="forecast-day">{{ day.date.strftime('%d/%m') }}</p>
+                                <div>
+                                    {% if day.temperature > 30 %}
+                                    <img src="{{ url_for('static', filename='img/weather_icons/sun.png') }}" alt="Soleil" width="40">
+                                    {% elif day.precipitation > 0 %}
+                                    <img src="{{ url_for('static', filename='img/weather_icons/rain.png') }}" alt="Pluie" width="40">
+                                    {% else %}
+                                    <img src="{{ url_for('static', filename='img/weather_icons/cloud.png') }}" alt="Nuageux" width="40">
+                                    {% endif %}
+                                </div>
+                                <h5>{{ day.temperature|round(1) }}°C</h5>
+                                <p class="mb-0">
+                                    <small>{{ day.humidity|round(0) }}% / {{ day.precipitation|round(1) }}mm</small>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var map = L.map('map').setView([0.4162, 9.4673], 6);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        // Ajouter des marqueurs pour chaque station
+        {% for station in stations %}
+        var marker = L.marker([{{ station.latitude }}, {{ station.longitude }}]).addTo(map);
+        
+        {% if station.id in forecasts %}
+        var forecast = {{ forecasts[station.id][0].temperature|round(1) }};
+        var precipitation = {{ forecasts[station.id][0].precipitation|round(1) }};
+        
+        var popupContent = '<strong>{{ station.name }}</strong><br>' +
+                          'Température: ' + forecast + '°C<br>' +
+                          'Précipitations: ' + precipitation + ' mm';
+        
+        marker.bindPopup(popupContent);
+        {% endif %}
+        {% endfor %}
+    });
+</script>
+{% endblock %}

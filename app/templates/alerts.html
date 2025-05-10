@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Alertes météorologiques</h1>
+<p>Système d'alertes pour les phénomènes météorologiques critiques au Gabon.</p>
+
+{% if alerts %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">Alertes en cours</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Station</th>
+                                <th>Type d'alerte</th>
+                                <th>Message</th>
+                                <th>Niveau</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for alert in alerts %}
+                            <tr>
+                                <td>{{ alert.station }}</td>
+                                <td>{{ alert.type }}</td>
+                                <td>{{ alert.message }}</td>
+                                <td>
+                                    <span class="badge bg-{{ alert.level }}">
+                                        {% if alert.level == 'danger' %}
+                                        Élevé
+                                        {% elif alert.level == 'warning' %}
+                                        Moyen
+                                        {% else %}
+                                        Faible
+                                        {% endif %}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="alert alert-success">
+            <h4 class="alert-heading">Aucune alerte en cours</h4>
+            <p>Actuellement, aucun phénomène météorologique critique n'est signalé au Gabon.</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Conditions actuelles par station</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for station in stations %}
+                    {% if station.id in latest_data %}
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5>{{ station.name }}</h5>
+                                <small>{{ station.region }}</small>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-6 text-center">
+                                        {% if latest_data[station.id].temperature > 30 %}
+                                        <img src="{{ url_for('static', filename='img/weather_icons/sun.png') }}" alt="Soleil" width="64">
+                                        {% elif latest_data[station.id].precipitation > 0 %}
+                                        <img src="{{ url_for('static', filename='img/weather_icons/rain.png') }}" alt="Pluie" width="64">
+                                        {% else %}
+                                        <img src="{{ url_for('static', filename='img/weather_icons/cloud.png') }}" alt="Nuageux" width="64">
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-6">
+                                        <h2>{{ latest_data[station.id].temperature|round(1) }}°C</h2>
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="row mt-2">
+                                    <div class="col-6">
+                                        <p><strong>Humidité:</strong> {{ latest_data[station.id].humidity|round(1) }}%</p>
+                                        <p><strong>Vent:</strong> {{ latest_data[station.id].wind_speed|round(1) }} km/h</p>
+                                    </div>
+                                    <div class="col-6">
+                                        <p><strong>Pression:</strong> {{ latest_data[station.id].pressure|round(1) }} hPa</p>
+                                        <p><strong>Précip.:</strong> {{ latest_data[station.id].precipitation|round(1) }} mm</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-3">
+                                    <h6>Statut:</h6>
+                                    {% set has_alert = false %}
+                                    {% for alert in alerts %}
+                                        {% if alert.station == station.name %}
+                                            {% set has_alert = true %}
+                                            <div class="alert alert-{{ alert.level }}">
+                                                {{ alert.type }}: {{ alert.message }}
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    {% if not has_alert %}
+                                        <div class="alert alert-success">
+                                            Conditions normales
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Types d'alertes</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Type d'alerte</th>
+                                <th>Description</th>
+                                <th>Seuils de déclenchement</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Fortes pluies</td>
+                                <td>Précipitations importantes pouvant causer des inondations</td>
+                                <td>
+                                    <ul>
+                                        <li>Alerte modérée: > 5 mm/jour</li>
+                                        <li>Alerte élevée: > 10 mm/jour</li>
+                                    </ul>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Vents forts</td>
+                                <td>Vents pouvant causer des dommages aux structures</td>
+                                <td>
+                                    <ul>
+                                        <li>Alerte modérée: > 15 km/h</li>
+                                        <li>Alerte élevée: > 25 km/h</li>
+                                    </ul>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Chaleur extrême</td>
+                                <td>Températures anormalement élevées</td>
+                                <td>
+                                    <ul>
+                                        <li>Alerte modérée: > 32°C</li>
+                                        <li>Alerte élevée: > 35°C</li>
+                                    </ul>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

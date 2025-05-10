@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block title %}Tableau de bord - GabonMétéo+{% endblock %}
+
+{% block content %}
+<h1>Tableau de bord administratif</h1>
+<p>Bienvenue dans le tableau de bord administratif de GabonMétéo+.</p>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card border-primary h-100">
+            <div class="card-body text-center">
+                <h1 class="display-4">{{ stats.stations_count }}</h1>
+                <p class="lead">Stations météorologiques</p>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStationModal">
+                    <i class="bi bi-plus-circle"></i> Ajouter une station
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-success h-100">
+            <div class="card-body text-center">
+                <h1 class="display-4">{{ stats.weather_data_count }}</h1>
+                <p class="lead">Enregistrements météo</p>
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addDataModal">
+                    <i class="bi bi-plus-circle"></i> Ajouter des données
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-info h-100">
+            <div class="card-body text-center">
+                <h1 class="display-4">{{ stats.users_count }}</h1>
+                <p class="lead">Utilisateurs</p>
+                <a href="{{ url_for('main.manage_users') }}" class="btn btn-info text-white">
+                    <i class="bi bi-people"></i> Gérer les utilisateurs
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Stations météorologiques</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nom</th>
+                                <th>Région</th>
+                                <th>Latitude</th>
+                                <th>Longitude</th>
+                                <th>Altitude</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for station in stations %}
+                            <tr>
+                                <td>{{ station.id }}</td>
+                                <td>{{ station.name }}</td>
+                                <td>{{ station.region }}</td>
+                                <td>{{ station.latitude }}</td>
+                                <td>{{ station.longitude }}</td>
+                                <td>{{ station.altitude }}</td>
+                                <td>
+                                    <a href="{{ url_for('main.station_detail', id=station.id) }}" class="btn btn-sm btn-info">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <button class="btn btn-sm btn-warning">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-success" onclick="exportData({{ station.id }})">
+                                        <i class="bi bi-download"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Derniers enregistrements météorologiques</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Station</th>
+                                <th>Date</th>
+                                <th>Température</th>
+                                <th>Humidité</th>
+                                <th>Pression</th>
+                                <th>Vitesse du vent</th>
+                                <th>Direction du vent</th>
+                                <th>Précipitations</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for data in latest_data %}
+                            <tr>
+                                <td>{{ data.id }}</td>
+                                <td>
+                                    {% for station in stations %}
+                                        {% if station.id == data.station_id %}
+                                            {{ station.name }}
+                                        {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>{{ data.timestamp.strftime('%d/%m/%Y') }}</td>
+                                <td>{{ data.temperature|round(1) }}°C</td>
+                                <td>{{ data.humidity|round(1) }}%</td>
+                                <td>{{ data.pressure|round(1) }} hPa</td>
+                                <td>{{ data.wind_speed|round(1) }} km/h</td>
+                                <td>{{ data.wind_direction|round(0) }}°</td>
+                                <td>{{ data.precipitation|round(1) }} mm</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-center mt-3">
+                    <button class="btn btn-primary" onclick="exportData()">
+                        <i class="bi bi-download"></i> Exporter toutes les données
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal d'ajout de station -->
+<div class="modal fade" id="addStationModal" tabindex="-1" aria-labelledby="addStationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="addStationModalLabel">Ajouter une station</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="{{ url_for('main.add_station') }}">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Nom de la station *</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="region" class="form-label">Région</label>
+                        <input type="text" class="form-control" id="region" name="region">
+                    </div>
+                    <div class="mb-3">
+                        <label for="latitude" class="form-label">Latitude *</label>
+                        <input type="number" step="any" class="form-control" id="latitude" name="latitude" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="longitude" class="form-label">Longitude *</label>
+                        <input type="number" step="any" class="form-control" id="longitude" name="longitude" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="altitude" class="form-label">Altitude (m)</label>
+                        <input type="number" step="any" class="form-control" id="altitude" name="altitude">
+                    </div>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-primary">Ajouter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal d'ajout de données météo -->
+<div class="modal fade" id="addDataModal" tabindex="-1" aria-labelledby="addDataModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="addDataModalLabel">Ajouter des données météorologiques</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="{{ url_for('main.add_data') }}">
+                    <div class="mb-3">
+                        <label for="station_id" class="form-label">Station *</label>
+                        <select class="form-select" id="station_id" name="station_id" required>
+                            <option value="" selected disabled>Sélectionnez une station</option>
+                            {% for station in stations %}
+                            <option value="{{ station.id }}">{{ station.name }} ({{ station.region }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="date" class="form-label">Date *</label>
+                        <input type="date" class="form-control" id="date" name="date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="temperature" class="form-label">Température (°C) *</label>
+                        <input type="number" step="0.1" class="form-control" id="temperature" name="temperature" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="humidity" class="form-label">Humidité (%)</label>
+                        <input type="number" step="0.1" class="form-control" id="humidity" name="humidity">
+                    </div>
+                    <div class="mb-3">
+                        <label for="pressure" class="form-label">Pression (hPa)</label>
+                        <input type="number" step="0.1" class="form-control" id="pressure" name="pressure">
+                    </div>
+                    <div class="mb-3">
+                        <label for="wind_speed" class="form-label">Vitesse du vent (km/h)</label>
+                        <input type="number" step="0.1" class="form-control" id="wind_speed" name="wind_speed">
+                    </div>
+                    <div class="mb-3">
+                        <label for="wind_direction" class="form-label">Direction du vent (°)</label>
+                        <input type="number" step="1" class="form-control" id="wind_direction" name="wind_direction">
+                    </div>
+                    <div class="mb-3">
+                        <label for="precipitation" class="form-label">Précipitations (mm)</label>
+                        <input type="number" step="0.1" class="form-control" id="precipitation" name="precipitation">
+                    </div>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-success">Ajouter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Fonction pour exporter les données
+    function exportData(stationId) {
+        let url = "{{ url_for('main.export_data') }}";
+        
+        if (stationId) {
+            url += "?station_id=" + stationId;
+        }
+        
+        // Requête AJAX pour récupérer les données
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                // Création d'un élément <a> invisible
+                const element = document.createElement('a');
+                element.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodeURIComponent(data.data));
+                element.setAttribute('download', data.filename);
+                
+                // Ajout de l'élément au document
+                document.body.appendChild(element);
+                
+                // Clic sur l'élément pour déclencher le téléchargement
+                element.click();
+                
+                // Suppression de l'élément
+                document.body.removeChild(element);
+            })
+            .catch(error => {
+                console.error('Erreur lors de l\'exportation des données:', error);
+                alert('Une erreur est survenue lors de l\'exportation des données.');
+            });
+    }
+    
+    // Définir la date du jour dans le formulaire d'ajout de données
+    document.addEventListener('DOMContentLoaded', function() {
+        const dateInput = document.getElementById('date');
+        if (dateInput) {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            
+            dateInput.value = `${year}-${month}-${day}`;
+        }
+    });
+</script>
+{% endblock %}

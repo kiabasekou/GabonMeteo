@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="jumbotron">
+    <h1 class="display-4">Bienvenue sur GabonMétéo+</h1>
+    <p class="lead">La plateforme météorologique intégrée pour la Direction Générale de Météorologie du Gabon</p>
+    <hr class="my-4">
+    <p>Accédez aux prévisions météorologiques, données historiques et services sectoriels adaptés au contexte gabonais.</p>
+    <a class="btn btn-primary btn-lg" href="{{ url_for('main.forecasts') }}" role="button">Voir les prévisions</a>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Conditions météorologiques actuelles</h5>
+            </div>
+            <div class="card-body">
+                <p class="lead text-center">Température moyenne au Gabon: <strong>{{ avg_temp|round(1) }}°C</strong></p>
+                
+                <div class="row">
+                    {% for station in stations %}
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5>{{ station.name }}</h5>
+                                <small>{{ station.region }}</small>
+                            </div>
+                            <div class="card-body">
+                                {% if station.id in latest_data %}
+                                <div class="row">
+                                    <div class="col-6 text-center">
+                                        {% if latest_data[station.id].temperature > 30 %}
+                                        <img src="{{ url_for('static', filename='img/weather_icons/sun.png') }}" alt="Soleil" width="64">
+                                        {% elif latest_data[station.id].precipitation > 0 %}
+                                        <img src="{{ url_for('static', filename='img/weather_icons/rain.png') }}" alt="Pluie" width="64">
+                                        {% else %}
+                                        <img src="{{ url_for('static', filename='img/weather_icons/cloud.png') }}" alt="Nuageux" width="64">
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-6">
+                                        <h2>{{ latest_data[station.id].temperature|round(1) }}°C</h2>
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="row mt-2">
+                                    <div class="col-6">
+                                        <p>Humidité: {{ latest_data[station.id].humidity|round(1) }}%</p>
+                                        <p>Vent: {{ latest_data[station.id].wind_speed|round(1) }} km/h</p>
+                                    </div>
+                                    <div class="col-6">
+                                        <p>Pression: {{ latest_data[station.id].pressure|round(1) }} hPa</p>
+                                        <p>Précip.: {{ latest_data[station.id].precipitation|round(1) }} mm</p>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <p class="text-center">Aucune donnée disponible</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Prévisions météorologiques</h5>
+                <p class="card-text">Consultez les prévisions météorologiques pour tout le Gabon</p>
+                <a href="{{ url_for('main.forecasts') }}" class="btn btn-primary">Voir</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Agriculture</h5>
+                <p class="card-text">Services météorologiques adaptés pour l'agriculture gabonaise</p>
+                <a href="{{ url_for('main.agriculture') }}" class="btn btn-primary">Voir</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Alertes</h5>
+                <p class="card-text">Système d'alertes pour les phénomènes météorologiques critiques</p>
+                <a href="{{ url_for('main.alerts') }}" class="btn btn-primary">Voir</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

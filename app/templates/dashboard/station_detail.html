@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+
+{% block title %}Station {{ station.name }} - GabonMétéo+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chart-container {
+        height: 400px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Station: {{ station.name }}</h1>
+    <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Retour au tableau de bord
+    </a>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Informations de la station</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <th>ID:</th>
+                        <td>{{ station.id }}</td>
+                    </tr>
+                    <tr>
+                        <th>Nom:</th>
+                        <td>{{ station.name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Région:</th>
+                        <td>{{ station.region }}</td>
+                    </tr>
+                    <tr>
+                        <th>Latitude:</th>
+                        <td>{{ station.latitude }}</td>
+                    </tr>
+                    <tr>
+                        <th>Longitude:</th>
+                        <td>{{ station.longitude }}</td>
+                    </tr>
+                    <tr>
+                        <th>Altitude:</th>
+                        <td>{{ station.altitude }} m</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Localisation</h5>
+            </div>
+            <div class="card-body">
+                <div id="map" style="height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Températures récentes</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="temperatureChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Précipitations récentes</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="precipitationChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Humidité récente</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="humidityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Données récentes</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Température (°C)</th>
+                                <th>Humidité (%)</th>
+                                <th>Pression (hPa)</th>
+                                <th>Vitesse du vent (km/h)</th>
+                                <th>Direction du vent (°)</th>
+                                <th>Précipitations (mm)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for data in weather_data %}
+                            <tr>
+                                <td>{{ data.timestamp.strftime('%d/%m/%Y') }}</td>
+                                <td>{{ data.temperature|round(1) }}</td>
+                                <td>{{ data.humidity|round(1) }}</td>
+                                <td>{{ data.pressure|round(1) }}</td>
+                                <td>{{ data.wind_speed|round(1) }}</td>
+                                <td>{{ data.wind_direction|round(0) }}</td>
+                                <td>{{ data.precipitation|round(1) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-center mt-3">
+                    <button class="btn btn-primary" onclick="exportData({{ station.id }})">
+                        <i class="bi bi-download"></i> Exporter les données
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialisation de la carte
+        var map = L.map('map').setView([{{ station.latitude }}, {{ station.longitude }}], 13);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        var marker = L.marker([{{ station.latitude }}, {{ station.longitude }}]).addTo(map);
+        marker.bindPopup("<strong>{{ station.name }}</strong><br>{{ station.region }}").openPopup();
+        
+        // Préparation des données pour les graphiques
+        var dates = [
+            {% for data in weather_data %}
+                "{{ data.timestamp.strftime('%d/%m/%Y') }}",
+            {% endfor %}
+        ];
+        
+        var temperatures = [
+            {% for data in weather_data %}
+                {{ data.temperature }},
+            {% endfor %}
+        ];
+        
+        var precipitations = [
+            {% for data in weather_data %}
+                {{ data.precipitation }},
+            {% endfor %}
+        ];
+        
+        var humidities = [
+            {% for data in weather_data %}
+                {{ data.humidity }},
+            {% endfor %}
+        ];
+        
+        // Graphique des températures
+        var tempCtx = document.getElementById('temperatureChart').getContext('2d');
+        var temperatureChart = new Chart(tempCtx, {
+            type: 'line',
+            data: {
+                labels: dates.reverse(),
+                datasets: [{
+                    label: 'Température (°C)',
+                    data: temperatures.reverse(),
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 2,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+        
+        // Graphique des précipitations
+        var precipCtx = document.getElementById('precipitationChart').getContext('2d');
+        var precipitationChart = new Chart(precipCtx, {
+            type: 'bar',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: 'Précipitations (mm)',
+                    data: precipitations,
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        // Graphique de l'humidité
+        var humidityCtx = document.getElementById('humidityChart').getContext('2d');
+        var humidityChart = new Chart(humidityCtx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: 'Humidité (%)',
+                    data: humidities,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 2,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+    });
+    
+    // Fonction pour exporter les données
+    function exportData(stationId) {
+        let url = "{{ url_for('main.export_data') }}";
+        
+        if (stationId) {
+            url += "?station_id=" + stationId;
+        }
+        
+        // Requête AJAX pour récupérer les données
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                // Création d'un élément <a> invisible
+                const element = document.createElement('a');
+                element.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodeURIComponent(data.data));
+                element.setAttribute('download', data.filename);
+                
+                // Ajout de l'élément au document
+                document.body.appendChild(element);
+                
+                // Clic sur l'élément pour déclencher le téléchargement
+                element.click();
+                
+                // Suppression de l'élément
+                document.body.removeChild(element);
+            })
+            .catch(error => {
+                console.error('Erreur lors de l\'exportation des données:', error);
+                alert('Une erreur est survenue lors de l\'exportation des données.');
+            });
+    }
+</script>
+{% endblock %}
