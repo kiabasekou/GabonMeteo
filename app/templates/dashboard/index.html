@@ -1,244 +1,499 @@
 {% extends "base.html" %}
 
-{% block title %}Tableau de bord - GabonMétéo+{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    #overview-map {
+        height: 350px;
+        width: 100%;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    
+    .jumbotron {
+        background-color: var(--light-color);
+        padding: 2.5rem 2rem;
+        border-radius: 0.5rem;
+        margin-bottom: 2rem;
+        background-image: linear-gradient(rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.8)), url('../static/img/gabon-background.jpg');
+        background-size: cover;
+        background-position: center;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .jumbotron::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(30, 136, 229, 0.3), rgba(30, 136, 229, 0));
+        z-index: 1;
+    }
+    
+    .jumbotron .container {
+        position: relative;
+        z-index: 2;
+    }
+    
+    .feature-card {
+        transition: all 0.3s ease;
+        border: none;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        height: 100%;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    }
+    
+    .feature-card .card-img-top {
+        height: 160px;
+        object-fit: cover;
+    }
+    
+    .weather-widget {
+        border-radius: 10px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        height: 100%;
+    }
+    
+    .weather-widget:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px rgba(0,0,0,0.15);
+    }
+    
+    .weather-widget .card-header {
+        padding: 15px;
+        border-bottom: none;
+    }
+    
+    .weather-widget .card-body {
+        padding: 1.25rem;
+    }
+    
+    .temperature-display {
+        font-size: 2.2rem;
+        font-weight: bold;
+        margin: 10px 0;
+    }
+    
+    .weather-info {
+        display: flex;
+        flex-wrap: wrap;
+    }
+    
+    .weather-info-item {
+        flex: 1 1 50%;
+        min-width: 100px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .weather-info-item i {
+        margin-right: 8px;
+        font-size: 1.2rem;
+        width: 25px;
+        text-align: center;
+    }
+    
+    .weather-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto;
+        display: block;
+    }
+    
+    .overview-section {
+        padding: 20px;
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .overview-title {
+        margin-bottom: 20px;
+        font-weight: 600;
+        color: var(--primary-color);
+        border-bottom: 2px solid var(--primary-color);
+        padding-bottom: 10px;
+    }
+    
+    .data-summary {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
+    
+    .summary-card {
+        flex: 1;
+        min-width: 150px;
+        margin: 0 10px 15px 0;
+        padding: 15px;
+        text-align: center;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+    
+    .summary-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .summary-value {
+        font-size: 1.8rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .summary-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    
+    .tabs-container {
+        margin-bottom: 30px;
+    }
+    
+    .nav-tabs .nav-link {
+        border: none;
+        color: #495057;
+        background-color: transparent;
+        border-bottom: 3px solid transparent;
+        padding: 0.8rem 1.5rem;
+        font-weight: 500;
+    }
+    
+    .nav-tabs .nav-link.active {
+        border-bottom: 3px solid var(--primary-color);
+        color: var(--primary-color);
+        background-color: transparent;
+    }
+    
+    .nav-tabs .nav-link:hover {
+        border-color: transparent transparent #dee2e6;
+    }
+    
+    .alert-summary {
+        background-color: #fff8f8;
+        border-left: 4px solid #dc3545;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 5px;
+    }
+    
+    .alert-count {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #dc3545;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<h1>Tableau de bord administratif</h1>
-<p>Bienvenue dans le tableau de bord administratif de GabonMétéo+.</p>
+<div class="jumbotron">
+    <div class="container">
+        <h1 class="display-4">Bienvenue sur GabonMétéo+</h1>
+        <p class="lead">La plateforme météorologique intégrée pour la Direction Générale de Météorologie du Gabon</p>
+        <hr class="my-4">
+        <p>Accédez aux prévisions météorologiques, données historiques et services sectoriels adaptés au contexte gabonais.</p>
+        <a class="btn btn-primary btn-lg" href="{{ url_for('main.forecasts') }}" role="button">
+            <i class="bi bi-cloud-sun"></i> Voir les prévisions
+        </a>
+        <a class="btn btn-outline-primary btn-lg" href="{{ url_for('main.alerts') }}" role="button">
+            <i class="bi bi-exclamation-triangle"></i> Consulter les alertes
+        </a>
+    </div>
+</div>
 
-<div class="row mb-4">
-    <div class="col-md-4">
-        <div class="card border-primary h-100">
-            <div class="card-body text-center">
-                <h1 class="display-4">{{ stats.stations_count }}</h1>
-                <p class="lead">Stations météorologiques</p>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStationModal">
-                    <i class="bi bi-plus-circle"></i> Ajouter une station
-                </button>
+<div class="overview-section">
+    <h2 class="overview-title">Aperçu météorologique national</h2>
+    
+    <div class="data-summary">
+        <div class="summary-card" style="background-color: #fff8f8; border-left: 4px solid #dc3545;">
+            <div class="summary-value">{{ avg_temp|round(1) }}°C</div>
+            <div class="summary-label">Température moyenne</div>
+        </div>
+        
+        {% set total_precip = 0 %}
+        {% for station in stations %}
+            {% if station.id in latest_data %}
+                {% set total_precip = total_precip + latest_data[station.id].precipitation %}
+            {% endif %}
+        {% endfor %}
+        
+        <div class="summary-card" style="background-color: #f8f9ff; border-left: 4px solid #0d6efd;">
+            <div class="summary-value">{{ total_precip|round(1) }} mm</div>
+            <div class="summary-label">Précipitations totales</div>
+        </div>
+        
+        {% set total_humidity = 0 %}
+        {% set count_humidity = 0 %}
+        {% for station in stations %}
+            {% if station.id in latest_data %}
+                {% set total_humidity = total_humidity + latest_data[station.id].humidity %}
+                {% set count_humidity = count_humidity + 1 %}
+            {% endif %}
+        {% endfor %}
+        
+        <div class="summary-card" style="background-color: #f8fffa; border-left: 4px solid #198754;">
+            <div class="summary-value">
+                {% if count_humidity > 0 %}
+                    {{ (total_humidity / count_humidity)|round(1) }}%
+                {% else %}
+                    N/A
+                {% endif %}
+            </div>
+            <div class="summary-label">Humidité moyenne</div>
+        </div>
+        
+        {% set max_wind = 0 %}
+        {% for station in stations %}
+            {% if station.id in latest_data %}
+                {% if latest_data[station.id].wind_speed > max_wind %}
+                    {% set max_wind = latest_data[station.id].wind_speed %}
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+        
+        <div class="summary-card" style="background-color: #fff8fc; border-left: 4px solid #6f42c1;">
+            <div class="summary-value">{{ max_wind|round(1) }} km/h</div>
+            <div class="summary-label">Vent maximal</div>
+        </div>
+    </div>
+    
+    <ul class="nav nav-tabs" id="weatherTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="map-tab" data-bs-toggle="tab" data-bs-target="#map-content" type="button" role="tab" aria-controls="map-content" aria-selected="true">
+                <i class="bi bi-map"></i> Carte
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="stations-tab" data-bs-toggle="tab" data-bs-target="#stations-content" type="button" role="tab" aria-controls="stations-content" aria-selected="false">
+                <i class="bi bi-geo-alt"></i> Stations
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="alerts-tab" data-bs-toggle="tab" data-bs-target="#alerts-content" type="button" role="tab" aria-controls="alerts-content" aria-selected="false">
+                <i class="bi bi-exclamation-triangle"></i> Alertes
+            </button>
+        </li>
+    </ul>
+    
+    <div class="tab-content" id="weatherTabsContent">
+        <div class="tab-pane fade show active" id="map-content" role="tabpanel" aria-labelledby="map-tab">
+            <div class="mt-3 mb-3">
+                <div id="overview-map"></div>
+            </div>
+        </div>
+        
+        <div class="tab-pane fade" id="stations-content" role="tabpanel" aria-labelledby="stations-tab">
+            <div class="row mt-3">
+                {% for station in stations %}
+                {% if station.id in latest_data %}
+                <div class="col-md-4 mb-3">
+                    <div class="weather-widget">
+                        <div class="card-header bg-primary text-white">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="mb-0">{{ station.name }}</h5>
+                                    <small>{{ station.region }}</small>
+                                </div>
+                                <a href="{{ url_for('main.historical') }}?station={{ station.id }}" class="btn btn-sm btn-light">
+                                    <i class="bi bi-graph-up"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-5 text-center">
+                                    {% if latest_data[station.id].temperature > 30 %}
+                                    <img src="{{ url_for('static', filename='img/weather_icons/sun.png') }}" alt="Soleil" class="weather-icon">
+                                    {% elif latest_data[station.id].precipitation > 0 %}
+                                    <img src="{{ url_for('static', filename='img/weather_icons/rain.png') }}" alt="Pluie" class="weather-icon">
+                                    {% else %}
+                                    <img src="{{ url_for('static', filename='img/weather_icons/cloud.png') }}" alt="Nuageux" class="weather-icon">
+                                    {% endif %}
+                                </div>
+                                <div class="col-7">
+                                    <div class="temperature-display">{{ latest_data[station.id].temperature|round(1) }}°C</div>
+                                    <div>
+                                        {% if latest_data[station.id].precipitation > 10 %}
+                                        <span class="badge bg-primary">Fortes pluies</span>
+                                        {% elif latest_data[station.id].precipitation > 0 %}
+                                        <span class="badge bg-info text-dark">Pluie légère</span>
+                                        {% elif latest_data[station.id].temperature > 32 %}
+                                        <span class="badge bg-danger">Très chaud</span>
+                                        {% elif latest_data[station.id].temperature > 28 %}
+                                        <span class="badge bg-warning text-dark">Chaud</span>
+                                        {% else %}
+                                        <span class="badge bg-success">Tempéré</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="weather-info">
+                                <div class="weather-info-item">
+                                    <i class="bi bi-droplet-fill text-primary"></i>
+                                    <span>{{ latest_data[station.id].humidity|round(1) }}%</span>
+                                </div>
+                                <div class="weather-info-item">
+                                    <i class="bi bi-cloud-rain text-primary"></i>
+                                    <span>{{ latest_data[station.id].precipitation|round(1) }} mm</span>
+                                </div>
+                                <div class="weather-info-item">
+                                    <i class="bi bi-wind text-primary"></i>
+                                    <span>{{ latest_data[station.id].wind_speed|round(1) }} km/h</span>
+                                </div>
+                                <div class="weather-info-item">
+                                    <i class="bi bi-speedometer2 text-primary"></i>
+                                    <span>{{ latest_data[station.id].pressure|round(1) }} hPa</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="tab-pane fade" id="alerts-content" role="tabpanel" aria-labelledby="alerts-tab">
+            <div class="mt-3">
+                {% set alert_count = 0 %}
+                {% for station in stations %}
+                    {% if station.id in latest_data %}
+                        {% if latest_data[station.id].precipitation > 10 or latest_data[station.id].wind_speed > 25 or latest_data[station.id].temperature > 35 %}
+                            {% set alert_count = alert_count + 1 %}
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+                
+                <div class="alert-summary">
+                    <div class="row align-items-center">
+                        <div class="col-md-2 text-center">
+                            <div class="alert-count">{{ alert_count }}</div>
+                            <div>alertes actives</div>
+                        </div>
+                        <div class="col-md-7">
+                            <p>
+                                {% if alert_count > 0 %}
+                                Des alertes météorologiques sont actuellement en vigueur. Veuillez consulter la page des alertes pour plus de détails.
+                                {% else %}
+                                Aucune alerte météorologique n'est actuellement en vigueur au Gabon.
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-3 text-end">
+                            <a href="{{ url_for('main.alerts') }}" class="btn btn-danger">
+                                <i class="bi bi-bell"></i> Voir les alertes
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="list-group">
+                    {% set has_alerts = false %}
+                    {% for station in stations %}
+                        {% if station.id in latest_data %}
+                            {% set data = latest_data[station.id] %}
+                            {% if data.precipitation > 10 %}
+                                {% set has_alerts = true %}
+                                <div class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h5 class="mb-1">{{ station.name }} - Fortes pluies</h5>
+                                        <small class="text-danger"><i class="bi bi-exclamation-triangle-fill"></i> Élevé</small>
+                                    </div>
+                                    <p class="mb-1">Précipitations importantes de {{ data.precipitation|round(1) }} mm. Risque d'inondations locales.</p>
+                                    <small>Dernière mise à jour: aujourd'hui</small>
+                                </div>
+                            {% endif %}
+                            
+                            {% if data.wind_speed > 25 %}
+                                {% set has_alerts = true %}
+                                <div class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h5 class="mb-1">{{ station.name }} - Vents forts</h5>
+                                        <small class="text-warning"><i class="bi bi-exclamation-triangle-fill"></i> Moyen</small>
+                                    </div>
+                                    <p class="mb-1">Vents soutenus de {{ data.wind_speed|round(1) }} km/h. Soyez prudents lors de vos déplacements.</p>
+                                    <small>Dernière mise à jour: aujourd'hui</small>
+                                </div>
+                            {% endif %}
+                            
+                            {% if data.temperature > 35 %}
+                                {% set has_alerts = true %}
+                                <div class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h5 class="mb-1">{{ station.name }} - Chaleur extrême</h5>
+                                        <small class="text-warning"><i class="bi bi-exclamation-triangle-fill"></i> Moyen</small>
+                                    </div>
+                                    <p class="mb-1">Température très élevée de {{ data.temperature|round(1) }}°C. Évitez l'exposition prolongée au soleil.</p>
+                                    <small>Dernière mise à jour: aujourd'hui</small>
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if not has_alerts %}
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle"></i> Aucune alerte météorologique active actuellement.
+                        </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card border-success h-100">
-            <div class="card-body text-center">
-                <h1 class="display-4">{{ stats.weather_data_count }}</h1>
-                <p class="lead">Enregistrements météo</p>
-                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addDataModal">
-                    <i class="bi bi-plus-circle"></i> Ajouter des données
-                </button>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card border-info h-100">
-            <div class="card-body text-center">
-                <h1 class="display-4">{{ stats.users_count }}</h1>
-                <p class="lead">Utilisateurs</p>
-                <a href="{{ url_for('main.manage_users') }}" class="btn btn-info text-white">
-                    <i class="bi bi-people"></i> Gérer les utilisateurs
+</div>
+
+<div class="row mt-3">
+    <div class="col-md-4 mb-4">
+        <div class="feature-card card h-100">
+            <img src="{{ url_for('static', filename='img/weather_forecast.jpg') }}" class="card-img-top" alt="Prévisions météorologiques">
+            <div class="card-body">
+                <h5 class="card-title">Prévisions météorologiques</h5>
+                <p class="card-text">Consultez les prévisions météorologiques détaillées pour toutes les régions du Gabon. Planifiez vos activités en toute confiance.</p>
+                <a href="{{ url_for('main.forecasts') }}" class="btn btn-primary">
+                    <i class="bi bi-cloud-sun"></i> Voir les prévisions
                 </a>
             </div>
         </div>
     </div>
-</div>
-
-<div class="row">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Stations météorologiques</h5>
-            </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="feature-card card h-100">
+            <img src="{{ url_for('static', filename='img/agriculture.jpg') }}" class="card-img-top" alt="Services agricoles">
             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Nom</th>
-                                <th>Région</th>
-                                <th>Latitude</th>
-                                <th>Longitude</th>
-                                <th>Altitude</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for station in stations %}
-                            <tr>
-                                <td>{{ station.id }}</td>
-                                <td>{{ station.name }}</td>
-                                <td>{{ station.region }}</td>
-                                <td>{{ station.latitude }}</td>
-                                <td>{{ station.longitude }}</td>
-                                <td>{{ station.altitude }}</td>
-                                <td>
-                                    <a href="{{ url_for('main.station_detail', id=station.id) }}" class="btn btn-sm btn-info">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                    <button class="btn btn-sm btn-warning">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-success" onclick="exportData({{ station.id }})">
-                                        <i class="bi bi-download"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                <h5 class="card-title">Services agricoles</h5>
+                <p class="card-text">Découvrez nos services météorologiques spécialement adaptés pour l'agriculture gabonaise. Optimisez vos rendements grâce à des données précises.</p>
+                <a href="{{ url_for('main.agriculture') }}" class="btn btn-primary">
+                    <i class="bi bi-tree"></i> Explorer
+                </a>
             </div>
         </div>
     </div>
-</div>
-
-<div class="row mt-4">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Derniers enregistrements météorologiques</h5>
-            </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="feature-card card h-100">
+            <img src="{{ url_for('static', filename='img/data_analysis.jpg') }}" class="card-img-top" alt="Données historiques">
             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Station</th>
-                                <th>Date</th>
-                                <th>Température</th>
-                                <th>Humidité</th>
-                                <th>Pression</th>
-                                <th>Vitesse du vent</th>
-                                <th>Direction du vent</th>
-                                <th>Précipitations</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for data in latest_data %}
-                            <tr>
-                                <td>{{ data.id }}</td>
-                                <td>
-                                    {% for station in stations %}
-                                        {% if station.id == data.station_id %}
-                                            {{ station.name }}
-                                        {% endif %}
-                                    {% endfor %}
-                                </td>
-                                <td>{{ data.timestamp.strftime('%d/%m/%Y') }}</td>
-                                <td>{{ data.temperature|round(1) }}°C</td>
-                                <td>{{ data.humidity|round(1) }}%</td>
-                                <td>{{ data.pressure|round(1) }} hPa</td>
-                                <td>{{ data.wind_speed|round(1) }} km/h</td>
-                                <td>{{ data.wind_direction|round(0) }}°</td>
-                                <td>{{ data.precipitation|round(1) }} mm</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                <div class="text-center mt-3">
-                    <button class="btn btn-primary" onclick="exportData()">
-                        <i class="bi bi-download"></i> Exporter toutes les données
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal d'ajout de station -->
-<div class="modal fade" id="addStationModal" tabindex="-1" aria-labelledby="addStationModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="addStationModalLabel">Ajouter une station</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form method="POST" action="{{ url_for('main.add_station') }}">
-                    <div class="mb-3">
-                        <label for="name" class="form-label">Nom de la station *</label>
-                        <input type="text" class="form-control" id="name" name="name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="region" class="form-label">Région</label>
-                        <input type="text" class="form-control" id="region" name="region">
-                    </div>
-                    <div class="mb-3">
-                        <label for="latitude" class="form-label">Latitude *</label>
-                        <input type="number" step="any" class="form-control" id="latitude" name="latitude" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="longitude" class="form-label">Longitude *</label>
-                        <input type="number" step="any" class="form-control" id="longitude" name="longitude" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="altitude" class="form-label">Altitude (m)</label>
-                        <input type="number" step="any" class="form-control" id="altitude" name="altitude">
-                    </div>
-                    <div class="text-end">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn btn-primary">Ajouter</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal d'ajout de données météo -->
-<div class="modal fade" id="addDataModal" tabindex="-1" aria-labelledby="addDataModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title" id="addDataModalLabel">Ajouter des données météorologiques</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form method="POST" action="{{ url_for('main.add_data') }}">
-                    <div class="mb-3">
-                        <label for="station_id" class="form-label">Station *</label>
-                        <select class="form-select" id="station_id" name="station_id" required>
-                            <option value="" selected disabled>Sélectionnez une station</option>
-                            {% for station in stations %}
-                            <option value="{{ station.id }}">{{ station.name }} ({{ station.region }})</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="date" class="form-label">Date *</label>
-                        <input type="date" class="form-control" id="date" name="date" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="temperature" class="form-label">Température (°C) *</label>
-                        <input type="number" step="0.1" class="form-control" id="temperature" name="temperature" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="humidity" class="form-label">Humidité (%)</label>
-                        <input type="number" step="0.1" class="form-control" id="humidity" name="humidity">
-                    </div>
-                    <div class="mb-3">
-                        <label for="pressure" class="form-label">Pression (hPa)</label>
-                        <input type="number" step="0.1" class="form-control" id="pressure" name="pressure">
-                    </div>
-                    <div class="mb-3">
-                        <label for="wind_speed" class="form-label">Vitesse du vent (km/h)</label>
-                        <input type="number" step="0.1" class="form-control" id="wind_speed" name="wind_speed">
-                    </div>
-                    <div class="mb-3">
-                        <label for="wind_direction" class="form-label">Direction du vent (°)</label>
-                        <input type="number" step="1" class="form-control" id="wind_direction" name="wind_direction">
-                    </div>
-                    <div class="mb-3">
-                        <label for="precipitation" class="form-label">Précipitations (mm)</label>
-                        <input type="number" step="0.1" class="form-control" id="precipitation" name="precipitation">
-                    </div>
-                    <div class="text-end">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn btn-success">Ajouter</button>
-                    </div>
-                </form>
+                <h5 class="card-title">Données historiques</h5>
+                <p class="card-text">Analysez les tendances climatiques à travers notre base de données historiques. Des outils puissants pour comprendre les modèles météorologiques.</p>
+                <a href="{{ url_for('main.historical') }}" class="btn btn-primary">
+                    <i class="bi bi-graph-up"></i> Analyser
+                </a>
             </div>
         </div>
     </div>
@@ -246,50 +501,77 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // Fonction pour exporter les données
-    function exportData(stationId) {
-        let url = "{{ url_for('main.export_data') }}";
-        
-        if (stationId) {
-            url += "?station_id=" + stationId;
-        }
-        
-        // Requête AJAX pour récupérer les données
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                // Création d'un élément <a> invisible
-                const element = document.createElement('a');
-                element.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodeURIComponent(data.data));
-                element.setAttribute('download', data.filename);
-                
-                // Ajout de l'élément au document
-                document.body.appendChild(element);
-                
-                // Clic sur l'élément pour déclencher le téléchargement
-                element.click();
-                
-                // Suppression de l'élément
-                document.body.removeChild(element);
-            })
-            .catch(error => {
-                console.error('Erreur lors de l\'exportation des données:', error);
-                alert('Une erreur est survenue lors de l\'exportation des données.');
-            });
-    }
-    
-    // Définir la date du jour dans le formulaire d'ajout de données
     document.addEventListener('DOMContentLoaded', function() {
-        const dateInput = document.getElementById('date');
-        if (dateInput) {
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0');
-            const day = String(today.getDate()).padStart(2, '0');
-            
-            dateInput.value = `${year}-${month}-${day}`;
+        // Initialisation de la carte
+        var map = L.map('overview-map').setView([0.4162, 9.4673], 6);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        // Fonction pour déterminer la couleur selon la température
+        function getColor(temp) {
+            return temp > 35 ? '#d73027' :
+                   temp > 30 ? '#fc8d59' :
+                   temp > 25 ? '#fee090' :
+                   temp > 20 ? '#e0f3f8' :
+                          '#91bfdb';
         }
+        
+        // Ajouter des cercles colorés pour chaque station
+        {% for station in stations %}
+        {% if station.id in latest_data %}
+        var temperature = {{ latest_data[station.id].temperature|round(1) }};
+        var precipitation = {{ latest_data[station.id].precipitation|round(1) }};
+        var radius = precipitation > 0 ? 20000 + precipitation * 1500 : 20000; // 20km de base, plus large si précipitations
+        
+        var circle = L.circle([{{ station.latitude }}, {{ station.longitude }}], {
+            color: '#333',
+            fillColor: getColor(temperature),
+            fillOpacity: 0.7,
+            radius: radius,
+            weight: 1
+        }).addTo(map);
+        
+        var weatherDesc = '';
+        if (precipitation > 10) weatherDesc = "Fortes pluies";
+        else if (precipitation > 0) weatherDesc = "Pluie légère";
+        else if (temperature > 33) weatherDesc = "Très chaud";
+        else if (temperature > 28) weatherDesc = "Chaud";
+        else weatherDesc = "Tempéré";
+        
+        var popupContent = '<div class="text-center">' +
+                          '<h5>{{ station.name }}</h5>' +
+                          '<p class="mb-1"><strong>' + weatherDesc + '</strong></p>' +
+                          '<p class="mb-1">Température: ' + temperature + '°C</p>' +
+                          '<p class="mb-1">Précipitations: ' + precipitation + ' mm</p>' +
+                          '<p class="mb-1">Humidité: {{ latest_data[station.id].humidity|round(0) }}%</p>' +
+                          '</div>';
+        
+        circle.bindPopup(popupContent);
+        
+        // Ajouter un marqueur pour le nom de la station
+        var marker = L.marker([{{ station.latitude }}, {{ station.longitude }}]).addTo(map);
+        marker.bindTooltip("{{ station.name }}", {permanent: true, direction: 'top', className: 'station-label', offset: [0, -10]});
+        {% endif %}
+        {% endfor %}
+        
+        // Ajouter une légende
+        var legend = L.control({position: 'bottomright'});
+        legend.onAdd = function (map) {
+            var div = L.DomUtil.create('div', 'legend');
+            div.innerHTML = '<div style="background: white; padding: 8px; border-radius: 5px; box-shadow: 0 0 15px rgba(0,0,0,0.2);">';
+            div.innerHTML += '<h6>Température</h6>';
+            div.innerHTML += '<div style="display: flex; align-items: center; margin-bottom: 5px;"><div style="background: #d73027; width: 15px; height: 15px; border-radius: 50%; margin-right: 8px;"></div> >35°C</div>';
+            div.innerHTML += '<div style="display: flex; align-items: center; margin-bottom: 5px;"><div style="background: #fc8d59; width: 15px; height: 15px; border-radius: 50%; margin-right: 8px;"></div> 30-35°C</div>';
+            div.innerHTML += '<div style="display: flex; align-items: center; margin-bottom: 5px;"><div style="background: #fee090; width: 15px; height: 15px; border-radius: 50%; margin-right: 8px;"></div> 25-30°C</div>';
+            div.innerHTML += '<div style="display: flex; align-items: center;"><div style="background: #91bfdb; width: 15px; height: 15px; border-radius: 50%; margin-right: 8px;"></div> <25°C</div>';
+            div.innerHTML += '</div>';
+            return div;
+        };
+        legend.addTo(map);
     });
 </script>
 {% endblock %}

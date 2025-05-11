@@ -1,3 +1,4 @@
+# Dans app/__init__.py, après les imports existants
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
@@ -27,9 +28,11 @@ def create_app():
     # Import et enregistrement des blueprints
     from app.routes.main import main_bp
     from app.routes.auth import auth_bp
+    from app.routes.api import api_bp  # Ajoutez cette ligne
     
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
+    app.register_blueprint(api_bp)    # Ajoutez cette ligne
     
     # Création des tables de la base de données
     with app.app_context():

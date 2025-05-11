@@ -330,3 +330,26 @@ def toggle_user_role(id):
     
     flash(f'Le rôle de {user.username} a été modifié avec succès.', 'success')
     return redirect(url_for('main.manage_users'))
+
+
+@main_bp.route('/statistics')
+def statistics():
+    """Page de statistiques et analyses météorologiques"""
+    # Récupération des stations
+    stations = WeatherStation.query.all()
+    
+    # Récupérer les données météo les plus récentes pour chaque station
+    latest_data = {}
+    for station in stations:
+        data = WeatherData.query.filter_by(station_id=station.id).order_by(WeatherData.timestamp.desc()).first()
+        if data:
+            latest_data[station.id] = data
+    
+    return render_template('statistics.html', 
+                           stations=stations, 
+                           latest_data=latest_data)
+
+@main_bp.route('/api-docs')
+def api_docs():
+    """Page de documentation de l'API"""
+    return render_template('api-docs.html')

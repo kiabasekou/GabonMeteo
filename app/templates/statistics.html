@@ -1,0 +1,948 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .stats-container {
+        margin-bottom: 30px;
+    }
+    
+    .chart-container {
+        height: 400px;
+        margin-bottom: 20px;
+    }
+    
+    .small-chart-container {
+        height: 250px;
+        margin-bottom: 15px;
+    }
+    
+    .stats-card {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px rgba(0,0,0,0.15);
+    }
+    
+    .stats-card .card-header {
+        padding: 15px;
+        border-bottom: none;
+    }
+    
+    .stats-summary {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
+    
+    .summary-stat {
+        flex: 1;
+        min-width: 150px;
+        margin: 0 10px 15px 0;
+        padding: 15px;
+        text-align: center;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+    
+    .summary-stat:hover {
+        transform: translateY(-5px);
+    }
+    
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    
+    .filter-controls {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        border: 1px solid #dee2e6;
+    }
+    
+    .trend-indicator {
+        font-size: 1.2rem;
+        margin-left: 5px;
+    }
+    
+    .trend-up {
+        color: #dc3545;
+    }
+    
+    .trend-down {
+        color: #198754;
+    }
+    
+    .trend-stable {
+        color: #6c757d;
+    }
+    
+    .region-map {
+        height: 400px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .comparison-table td, .comparison-table th {
+        text-align: center;
+    }
+    
+    .comparison-table td:first-child, .comparison-table th:first-child {
+        text-align: left;
+    }
+    
+    .heatmap-container {
+        height: 300px;
+        margin-bottom: 20px;
+    }
+    
+    .climate-zone {
+        border-left: 4px solid;
+        padding-left: 10px;
+        margin-bottom: 10px;
+    }
+    
+    .climate-zone h5 {
+        margin-bottom: 5px;
+    }
+    
+    .climate-zone-coastal {
+        border-color: #3498db;
+    }
+    
+    .climate-zone-equatorial {
+        border-color: #2ecc71;
+    }
+    
+    .climate-zone-northern {
+        border-color: #f39c12;
+    }
+    
+    .climate-zone-eastern {
+        border-color: #9b59b6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Statistiques et analyses météorologiques</h1>
+<p>Analyses détaillées des tendances et statistiques météorologiques au Gabon.</p>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="filter-controls">
+            <form class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="station" class="form-label">Station</label>
+                    <select class="form-select" id="station" name="station">
+                        <option value="all" selected>Toutes les stations</option>
+                        {% for station in stations %}
+                        <option value="{{ station.id }}">{{ station.name }} ({{ station.region }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="parameter" class="form-label">Paramètre</label>
+                    <select class="form-select" id="parameter" name="parameter">
+                        <option value="temperature" selected>Température</option>
+                        <option value="precipitation">Précipitations</option>
+                        <option value="humidity">Humidité</option>
+                        <option value="wind">Vent</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="period" class="form-label">Période</label>
+                    <select class="form-select" id="period" name="period">
+                        <option value="30days" selected>30 derniers jours</option>
+                        <option value="90days">90 derniers jours</option>
+                        <option value="year">Dernière année</option>
+                        <option value="all">Toutes les données</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Analyser</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="stats-summary">
+    <div class="summary-stat" style="background-color: #fff8f8; border-left: 4px solid #dc3545;">
+        <div class="stat-value">28.5°C</div>
+        <div class="stat-label">Température moyenne</div>
+        <div><span class="trend-indicator trend-up"><i class="bi bi-arrow-up"></i> 0.8°C</span></div>
+    </div>
+    
+    <div class="summary-stat" style="background-color: #f8f9ff; border-left: 4px solid #0d6efd;">
+        <div class="stat-value">1520 mm</div>
+        <div class="stat-label">Précipitations annuelles</div>
+        <div><span class="trend-indicator trend-up"><i class="bi bi-arrow-up"></i> 5.2%</span></div>
+    </div>
+    
+    <div class="summary-stat" style="background-color: #f8fffa; border-left: 4px solid #198754;">
+        <div class="stat-value">83%</div>
+        <div class="stat-label">Humidité relative moyenne</div>
+        <div><span class="trend-indicator trend-stable"><i class="bi bi-dash"></i> 0.3%</span></div>
+    </div>
+    
+    <div class="summary-stat" style="background-color: #fff8fc; border-left: 4px solid #6f42c1;">
+        <div class="stat-value">9.2 km/h</div>
+        <div class="stat-label">Vitesse moyenne du vent</div>
+        <div><span class="trend-indicator trend-down"><i class="bi bi-arrow-down"></i> 0.5 km/h</span></div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card stats-card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Évolution des températures</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="temperatureTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card stats-card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Répartition des précipitations</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="precipitationChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card stats-card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Distribution des températures</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="temperatureDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card stats-card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Analyse régionale</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-7">
+                        <!-- Structure améliorée pour le conteneur de la carte -->
+                        <div id="region-map-container" style="width: 100%; height: 450px; position: relative; border-radius: 5px; overflow: hidden; background-color: #f8f9fa;">
+                            <div id="region-map" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;"></div>
+                            <!-- Ajout d'un message de chargement -->
+                            <div id="map-loading" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background-color: rgba(255,255,255,0.7); z-index: 2;">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Chargement...</span>
+                                </div>
+                                <span class="ms-2">Chargement de la carte...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <h5 class="mb-3">Zones climatiques du Gabon</h5>
+                        
+                        <div class="climate-zone climate-zone-coastal">
+                            <h5>Zone côtière</h5>
+                            <p>Caractérisée par un climat équatorial maritime, avec des précipitations abondantes (1800-2500 mm/an) et des températures moyennes de 26-28°C.</p>
+                        </div>
+                        
+                        <div class="climate-zone climate-zone-equatorial">
+                            <h5>Zone équatoriale centrale</h5>
+                            <p>Climat équatorial typique avec une forte humidité, des précipitations régulières (1500-2000 mm/an) et des températures moyennes autour de 25-27°C.</p>
+                        </div>
+                        
+                        <div class="climate-zone climate-zone-northern">
+                            <h5>Zone nord</h5>
+                            <p>Climat tropical humide avec une saison sèche plus marquée, des précipitations de 1300-1700 mm/an et des températures moyennes de 24-26°C.</p>
+                        </div>
+                        
+                        <div class="climate-zone climate-zone-eastern">
+                            <h5>Zone est/plateau</h5>
+                            <p>Climat plus frais dû à l'altitude, avec des précipitations modérées (1200-1600 mm/an) et des températures moyennes de 23-25°C.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card stats-card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Humidité relative</h5>
+            </div>
+            <div class="card-body">
+                <div class="small-chart-container">
+                    <canvas id="humidityChart"></canvas>
+                </div>
+                <div class="mt-3">
+                    <h6>Observations clés :</h6>
+                    <ul>
+                        <li>Humidité moyenne plus élevée pendant la saison des pluies (80-95%)</li>
+                        <li>Légère diminution pendant la saison sèche (70-85%)</li>
+                        <li>Variations diurnes importantes (±15%)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card stats-card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Vents dominants</h5>
+            </div>
+            <div class="card-body">
+                <div class="small-chart-container">
+                    <canvas id="windRoseChart"></canvas>
+                </div>
+                <div class="mt-3">
+                    <h6>Observations clés :</h6>
+                    <ul>
+                        <li>Vents dominants du sud-ouest sur la côte</li>
+                        <li>Vents plus faibles et variables à l'intérieur des terres</li>
+                        <li>Vitesse moyenne annuelle de 9.2 km/h</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card stats-card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Pression atmosphérique</h5>
+            </div>
+            <div class="card-body">
+                <div class="small-chart-container">
+                    <canvas id="pressureChart"></canvas>
+                </div>
+                <div class="mt-3">
+                    <h6>Observations clés :</h6>
+                    <ul>
+                        <li>Pression moyenne autour de 1010-1015 hPa</li>
+                        <li>Variations saisonnières limitées</li>
+                        <li>Baisse notable avant les orages tropicaux</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card stats-card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Comparaison des stations</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover comparison-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Station</th>
+                                <th>Temp. moy. (°C)</th>
+                                <th>Précip. annuelles (mm)</th>
+                                <th>Humidité moy. (%)</th>
+                                <th>Vent moy. (km/h)</th>
+                                <th>Jours de pluie</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Libreville</td>
+                                <td>28.5</td>
+                                <td>2870</td>
+                                <td>85</td>
+                                <td>10.5</td>
+                                <td>152</td>
+                            </tr>
+                            <tr>
+                                <td>Port-Gentil</td>
+                                <td>27.9</td>
+                                <td>2650</td>
+                                <td>83</td>
+                                <td>15.3</td>
+                                <td>143</td>
+                            </tr>
+                            <tr>
+                                <td>Franceville</td>
+                                <td>26.5</td>
+                                <td>1850</td>
+                                <td>75</td>
+                                <td>5.2</td>
+                                <td>120</td>
+                            </tr>
+                            <tr>
+                                <td>Lambaréné</td>
+                                <td>27.8</td>
+                                <td>2200</td>
+                                <td>83</td>
+                                <td>7.3</td>
+                                <td>135</td>
+                            </tr>
+                            <tr>
+                                <td>Oyem</td>
+                                <td>25.2</td>
+                                <td>1750</td>
+                                <td>78</td>
+                                <td>4.5</td>
+                                <td>115</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card stats-card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Heatmap des températures annuelles</h5>
+            </div>
+            <div class="card-body">
+                <div class="heatmap-container">
+                    <canvas id="temperatureHeatmap"></canvas>
+                </div>
+                <div class="mt-3 text-center">
+                    <p><strong>Note :</strong> Cette heatmap montre les variations de température moyenne mensuelle pour chaque station sur l'année.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Tendances climatiques observées</h5>
+            </div>
+            <div class="card-body">
+                <div class="accordion" id="climateTrendsAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingTemperature">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTemperature" aria-expanded="true" aria-controls="collapseTemperature">
+                                Tendances des températures
+                            </button>
+                        </h2>
+                        <div id="collapseTemperature" class="accordion-collapse collapse show" aria-labelledby="headingTemperature" data-bs-parent="#climateTrendsAccordion">
+                            <div class="accordion-body">
+                                <p>Les données météorologiques montrent une légère augmentation des températures moyennes annuelles de 0.8°C au cours des dernières décennies au Gabon. Cette tendance est plus marquée dans les zones urbaines comme Libreville et Port-Gentil, où l'effet d'îlot de chaleur urbain amplifie le réchauffement.</p>
+                                <p>Les températures minimales nocturnes ont augmenté plus rapidement que les maximales diurnes, réduisant l'amplitude thermique journalière, particulièrement pendant la saison sèche.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingPrecipitation">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePrecipitation" aria-expanded="false" aria-controls="collapsePrecipitation">
+                                Tendances des précipitations
+                            </button>
+                        </h2>
+                        <div id="collapsePrecipitation" class="accordion-collapse collapse" aria-labelledby="headingPrecipitation" data-bs-parent="#climateTrendsAccordion">
+                            <div class="accordion-body">
+                                <p>Les régimes de précipitations au Gabon montrent une variabilité accrue avec une légère augmentation globale de 5.2% des précipitations annuelles. La distribution des pluies devient moins prévisible, avec des épisodes plus intenses mais parfois plus espacés.</p>
+                                <p>Les zones côtières connaissent une augmentation plus importante des précipitations que les régions intérieures. La saison des pluies semble s'allonger légèrement dans certaines régions, avec un début plus précoce et une fin plus tardive.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingExtreme">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExtreme" aria-expanded="false" aria-controls="collapseExtreme">
+                                Événements extrêmes
+                            </button>
+                        </h2>
+                        <div id="collapseExtreme" class="accordion-collapse collapse" aria-labelledby="headingExtreme" data-bs-parent="#climateTrendsAccordion">
+                            <div class="accordion-body">
+                                <p>Les données indiquent une augmentation de la fréquence des événements de précipitations extrêmes, particulièrement le long de la côte. Les fortes pluies dépassant 50 mm en 24 heures sont devenues plus fréquentes, avec un accroissement estimé à 12% sur la dernière décennie.</p>
+                                <p>Les périodes de chaleur extrême (jours consécutifs avec des températures maximales supérieures à 35°C) sont également en hausse, notamment dans les régions urbaines et les zones de déforestation active.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // S'assurer que tous les éléments canvas sont bien présents
+        const chartElements = {
+            temperatureTrendChart: document.getElementById('temperatureTrendChart'),
+            temperatureDistributionChart: document.getElementById('temperatureDistributionChart'),
+            precipitationChart: document.getElementById('precipitationChart'),
+            humidityChart: document.getElementById('humidityChart'),
+            windRoseChart: document.getElementById('windRoseChart'),
+            pressureChart: document.getElementById('pressureChart'),
+            temperatureHeatmap: document.getElementById('temperatureHeatmap')
+        };
+        
+        // Vérifier que tous les éléments canvas existent
+        for (const [id, element] of Object.entries(chartElements)) {
+            if (!element) {
+                console.error(`L'élément canvas #${id} n'existe pas dans le DOM`);
+            }
+        }
+
+        // Données simulées pour les graphiques
+        const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+        
+        // Fonction pour initialiser un graphique s'il existe
+        function initChart(chartId, chartConfig) {
+            const element = document.getElementById(chartId);
+            if (element) {
+                const ctx = element.getContext('2d');
+                return new Chart(ctx, chartConfig);
+            }
+            return null;
+        }
+        
+        // Graphique d'évolution des températures
+        initChart('temperatureTrendChart', {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 36}, (_, i) => {
+                    const month = i % 12;
+                    const year = 2023 + Math.floor(i / 12);
+                    return `${months[month]} ${year}`;
+                }),
+                datasets: [{
+                    label: 'Température moyenne (°C)',
+                    data: Array.from({length: 36}, (_, i) => {
+                        // Simuler une tendance à la hausse avec des variations saisonnières
+                        const basetemp = 25 + Math.sin(i * Math.PI / 6) * 3; // Variation saisonnière
+                        const trend = i * 0.02; // Tendance à la hausse
+                        const random = Math.random() - 0.5; // Variation aléatoire
+                        return basetemp + trend + random;
+                    }),
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Évolution des températures moyennes (3 dernières années)'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Température (°C)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Graphique de distribution des températures
+        initChart('temperatureDistributionChart', {
+            type: 'bar',
+            data: {
+                labels: ['18-20°C', '20-22°C', '22-24°C', '24-26°C', '26-28°C', '28-30°C', '30-32°C', '32-34°C', '34-36°C'],
+                datasets: [{
+                    label: 'Fréquence (%)',
+                    data: [2, 5, 10, 15, 25, 20, 15, 5, 3],
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(75, 192, 192, 0.7)',
+                        'rgba(75, 192, 192, 0.7)',
+                        'rgba(255, 205, 86, 0.7)',
+                        'rgba(255, 159, 64, 0.7)',
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(255, 99, 132, 0.7)'
+                    ],
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Distribution des températures moyennes journalières'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Fréquence (%)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Plage de température'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Graphique des précipitations
+        initChart('precipitationChart', {
+            type: 'bar',
+            data: {
+                labels: months,
+                datasets: [{
+                    label: 'Précipitations moyennes (mm)',
+                    data: [300, 280, 350, 320, 150, 30, 20, 15, 50, 180, 250, 320],
+                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Précipitations moyennes mensuelles'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Précipitations (mm)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Mois'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Graphique d'humidité
+        initChart('humidityChart', {
+            type: 'line',
+            data: {
+                labels: months,
+                datasets: [{
+                    label: 'Humidité moyenne (%)',
+                    data: [86, 85, 87, 88, 85, 80, 78, 77, 79, 83, 85, 87],
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Humidité relative moyenne mensuelle'
+                    }
+                },
+                scales: {
+                    y: {
+                        min: 50,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Humidité (%)'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Graphique des vents (radar)
+        initChart('windRoseChart', {
+            type: 'radar',
+            data: {
+                labels: ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'],
+                datasets: [{
+                    label: 'Fréquence (%)',
+                    data: [5, 8, 12, 15, 10, 25, 18, 7],
+                    backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                    borderColor: 'rgba(153, 102, 255, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Rose des vents - Direction dominante'
+                    }
+                },
+                scales: {
+                    r: {
+                        angleLines: {
+                            display: true
+                        },
+                        beginAtZero: true,
+                        max: 30
+                    }
+                }
+            }
+        });
+        
+        // Graphique de pression
+        initChart('pressureChart', {
+            type: 'line',
+            data: {
+                labels: months,
+                datasets: [{
+                    label: 'Pression moyenne (hPa)',
+                    data: [1012, 1011, 1011, 1012, 1013, 1014, 1015, 1015, 1014, 1013, 1012, 1012],
+                    borderColor: 'rgba(255, 159, 64, 1)',
+                    backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Pression atmosphérique moyenne mensuelle'
+                    }
+                },
+                scales: {
+                    y: {
+                        min: 1005,
+                        max: 1020,
+                        title: {
+                            display: true,
+                            text: 'Pression (hPa)'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Heatmap des températures
+        initChart('temperatureHeatmap', {
+            type: 'bar',
+            data: {
+                labels: months,
+                datasets: [
+                    {
+                        label: 'Libreville',
+                        data: [28.5, 28.7, 28.9, 29.0, 28.3, 27.5, 26.8, 27.0, 27.5, 28.1, 28.4, 28.6],
+                        backgroundColor: 'rgba(255, 99, 132, 0.7)'
+                    },
+                    {
+                        label: 'Port-Gentil',
+                        data: [27.9, 28.1, 28.3, 28.5, 27.8, 26.9, 26.2, 26.4, 27.0, 27.6, 27.8, 27.9],
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)'
+                    },
+                    {
+                        label: 'Franceville',
+                        data: [26.5, 26.8, 27.0, 27.2, 26.5, 25.8, 25.0, 25.2, 25.8, 26.2, 26.4, 26.5],
+                        backgroundColor: 'rgba(75, 192, 192, 0.7)'
+                    },
+                    {
+                        label: 'Lambaréné',
+                        data: [27.8, 28.0, 28.2, 28.4, 27.7, 27.0, 26.3, 26.5, 27.1, 27.5, 27.7, 27.8],
+                        backgroundColor: 'rgba(255, 205, 86, 0.7)'
+                    },
+                    {
+                        label: 'Oyem',
+                        data: [25.2, 25.5, 25.8, 26.0, 25.3, 24.5, 23.8, 24.0, 24.5, 25.0, 25.1, 25.2],
+                        backgroundColor: 'rgba(153, 102, 255, 0.7)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Températures moyennes mensuelles par station (°C)'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        min: 23,
+                        title: {
+                            display: true,
+                            text: 'Température (°C)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Mois'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Solution alternative : utiliser une image statique pour la carte au lieu de Leaflet
+        // Cela garantit que quelque chose sera toujours affiché, même si la carte interactive échoue
+        function createStaticMap() {
+            const mapContainer = document.getElementById('region-map-container');
+            const loadingElement = document.getElementById('map-loading');
+            
+            if (mapContainer && loadingElement) {
+                // Masquer le spinner de chargement
+                loadingElement.style.display = 'none';
+                
+                // Créer une image statique de la carte du Gabon
+                const img = document.createElement('img');
+                img.src = 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Gabon_location_map.svg/500px-Gabon_location_map.svg.png';  // Carte statique du Gabon (remplacer par une URL appropriée)
+                img.alt = 'Carte des zones climatiques du Gabon';
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'contain';
+                img.style.borderRadius = '5px';
+                
+                // Ajouter l'image au conteneur
+                mapContainer.appendChild(img);
+                
+                console.log('Carte statique ajoutée avec succès');
+            }
+        }
+        
+        // Essayer d'initialiser la carte Leaflet d'abord
+        try {
+            // Vérifier si Leaflet est disponible
+            if (typeof L !== 'undefined') {
+                // Initialiser une carte Leaflet simplifiée
+                const mapElement = document.getElementById('region-map');
+                const loadingElement = document.getElementById('map-loading');
+                
+                if (mapElement) {
+                    const map = L.map('region-map').setView([0.4162, 9.4673], 6);
+                    
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    }).addTo(map);
+                    
+                    // Masquer l'indicateur de chargement
+                    if (loadingElement) {
+                        loadingElement.style.display = 'none';
+                    }
+                    
+                    // Ajouter quelques cercles représentant les zones climatiques
+                    L.circle([-0.7193, 8.7815], {
+                        color: '#3498db',
+                        fillColor: '#3498db',
+                        fillOpacity: 0.2,
+                        radius: 100000
+                    }).addTo(map).bindPopup("<b>Zone côtière</b><br>Climat équatorial maritime");
+                    
+                    L.circle([-0.7001, 10.2406], {
+                        color: '#2ecc71',
+                        fillColor: '#2ecc71',
+                        fillOpacity: 0.2,
+                        radius: 120000
+                    }).addTo(map).bindPopup("<b>Zone équatoriale centrale</b><br>Climat équatorial typique");
+                    
+                    L.circle([1.5995, 11.5793], {
+                        color: '#f39c12',
+                        fillColor: '#f39c12',
+                        fillOpacity: 0.2,
+                        radius: 100000
+                    }).addTo(map).bindPopup("<b>Zone nord</b><br>Climat tropical humide");
+                    
+                    L.circle([-1.6333, 13.5833], {
+                        color: '#9b59b6',
+                        fillColor: '#9b59b6',
+                        fillOpacity: 0.2,
+                        radius: 100000
+                    }).addTo(map).bindPopup("<b>Zone est/plateau</b><br>Climat plus frais");
+                    
+                    console.log('Carte Leaflet initialisée avec succès');
+                    
+                    // S'assurer que la carte est correctement dimensionnée
+                    setTimeout(function() {
+                        map.invalidateSize();
+                    }, 500);
+                }
+            } else {
+                // Si Leaflet n'est pas disponible, utiliser une image statique
+                console.warn('Leaflet n\'est pas disponible, utilisation d\'une image statique à la place');
+                createStaticMap();
+            }
+        } catch (error) {
+            // En cas d'erreur, utiliser une image statique
+            console.error('Erreur lors de l\'initialisation de la carte Leaflet:', error);
+            createStaticMap();
+        }
+    });
+</script>
+{% endblock %}

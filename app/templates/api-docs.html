@@ -1,0 +1,383 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .api-section {
+        margin-bottom: 30px;
+    }
+    
+    .api-endpoint {
+        background-color: #f8f9fa;
+        border-left: 4px solid var(--primary-color);
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 0 5px 5px 0;
+    }
+    
+    .endpoint-url {
+        font-family: monospace;
+        font-weight: bold;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .http-method {
+        padding: 3px 8px;
+        border-radius: 3px;
+        margin-right: 10px;
+        color: white;
+        font-size: 0.8rem;
+    }
+    
+    .get-method {
+        background-color: #2ecc71;
+    }
+    
+    .post-method {
+        background-color: #3498db;
+    }
+    
+    .put-method {
+        background-color: #f39c12;
+    }
+    
+    .delete-method {
+        background-color: #e74c3c;
+    }
+    
+    .endpoint-description {
+        margin-bottom: 15px;
+    }
+    
+    .parameter-table {
+        margin-bottom: 15px;
+    }
+    
+    .response-example {
+        background-color: #272822;
+        color: #f8f8f2;
+        padding: 15px;
+        border-radius: 5px;
+        overflow-x: auto;
+        font-family: monospace;
+    }
+    
+    .copy-btn {
+        float: right;
+        margin-top: -5px;
+        font-size: 0.8rem;
+    }
+    
+    .tab-content {
+        margin-top: 20px;
+    }
+    
+    .nav-tabs .nav-link {
+        border: none;
+        color: #495057;
+        background-color: transparent;
+        border-bottom: 3px solid transparent;
+        padding: 0.8rem 1.5rem;
+        font-weight: 500;
+    }
+    
+    .nav-tabs .nav-link.active {
+        border-bottom: 3px solid var(--primary-color);
+        color: var(--primary-color);
+        background-color: transparent;
+    }
+    
+    .api-key-section {
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 30px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Documentation de l'API GabonMétéo+</h1>
+<p>Cette API permet d'accéder aux données météorologiques collectées par les stations de la Direction Générale de Météorologie du Gabon.</p>
+
+<div class="alert alert-info">
+    <h4><i class="bi bi-info-circle"></i> Version Beta</h4>
+    <p>L'API GabonMétéo+ est actuellement en version beta et peut être sujette à des changements.</p>
+</div>
+
+<div class="api-key-section">
+    <h3>Authentification</h3>
+    <p>Pour le moment, l'API est accessible sans clé d'API. Cependant, pour une utilisation en production, nous recommandons de vous enregistrer pour obtenir une clé.</p>
+    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+        <button class="btn btn-primary" type="button" disabled>Demander une clé API</button>
+    </div>
+</div>
+
+<ul class="nav nav-tabs" id="apiTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab" aria-controls="overview" aria-selected="true">Vue d'ensemble</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="stations-tab" data-bs-toggle="tab" data-bs-target="#stations" type="button" role="tab" aria-controls="stations" aria-selected="false">Stations</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="current-tab" data-bs-toggle="tab" data-bs-target="#current" type="button" role="tab" aria-controls="current" aria-selected="false">Données actuelles</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="historical-tab" data-bs-toggle="tab" data-bs-target="#historical" type="button" role="tab" aria-controls="historical" aria-selected="false">Historique</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="forecast-tab" data-bs-toggle="tab" data-bs-target="#forecast" type="button" role="tab" aria-controls="forecast" aria-selected="false">Prévisions</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="statistics-tab" data-bs-toggle="tab" data-bs-target="#statistics" type="button" role="tab" aria-controls="statistics" aria-selected="false">Statistiques</button>
+    </li>
+</ul>
+
+<div class="tab-content" id="apiTabsContent">
+    <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
+        <div class="api-section">
+            <h3>Introduction</h3>
+            <p>L'API GabonMétéo+ est une interface RESTful qui permet aux développeurs d'accéder aux données météorologiques du Gabon pour les intégrer dans leurs applications.</p>
+            <p>Toutes les réponses sont au format JSON avec les codes HTTP standards:</p>
+            <ul>
+                <li><strong>200</strong> - Succès</li>
+                <li><strong>400</strong> - Requête incorrecte</li>
+                <li><strong>404</strong> - Ressource non trouvée</li>
+                <li><strong>500</strong> - Erreur serveur</li>
+            </ul>
+        </div>
+        
+        <div class="api-section">
+            <h3>Exemples d'utilisation</h3>
+            <div class="card mb-3">
+                <div class="card-header">JavaScript (Fetch API)</div>
+                <div class="card-body">
+                    <pre class="response-example">
+fetch('https://gabonmeteo.ga/api/current')
+  .then(response => response.json())
+  .then(data => {
+    console.log(data);
+    // Traitement des données...
+  })
+  .catch(error => console.error('Erreur:', error));</pre>
+                </div>
+            </div>
+            
+            <div class="card mb-3">
+                <div class="card-header">Python (Requests)</div>
+                <div class="card-body">
+                    <pre class="response-example">
+import requests
+
+response = requests.get('https://gabonmeteo.ga/api/current')
+data = response.json()
+print(data)
+# Traitement des données...</pre>
+                </div>
+            </div>
+        </div>
+        
+        <div class="api-section">
+            <h3>Structure de base des réponses</h3>
+            <p>Toutes les réponses de l'API contiennent au minimum les champs suivants:</p>
+            <pre class="response-example">
+{
+  "status": "success",  // ou "error" en cas de problème
+  "data": {...}         // données demandées (peut varier selon l'endpoint)
+}</pre>
+        </div>
+        
+        <div class="api-section">
+            <h3>Vérification du statut de l'API</h3>
+            <div class="api-endpoint">
+                <div class="endpoint-url">
+                    <span class="http-method get-method">GET</span> 
+                    <span>/api/status</span>
+                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyToClipboard('https://gabonmeteo.ga/api/status')">
+                        <i class="bi bi-clipboard"></i> Copier
+                    </button>
+                </div>
+                <div class="endpoint-description">
+                    <p>Vérifier si l'API est en ligne et fonctionnelle.</p>
+                </div>
+                <div class="response-example">
+{
+  "status": "online",
+  "version": "1.0.0",
+  "timestamp": "2025-05-11 12:34:56"
+}</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="tab-pane fade" id="stations" role="tabpanel" aria-labelledby="stations-tab">
+        <div class="api-section">
+            <h3>Liste des stations</h3>
+            <div class="api-endpoint">
+                <div class="endpoint-url">
+                    <span class="http-method get-method">GET</span> 
+                    <span>/api/stations</span>
+                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyToClipboard('https://gabonmeteo.ga/api/stations')">
+                        <i class="bi bi-clipboard"></i> Copier
+                    </button>
+                </div>
+                <div class="endpoint-description">
+                    <p>Récupérer la liste de toutes les stations météorologiques disponibles.</p>
+                </div>
+                <div class="response-example">
+{
+  "status": "success",
+  "count": 5,
+  "stations": [
+    {
+      "id": 1,
+      "name": "Libreville",
+      "region": "Estuaire",
+      "latitude": 0.4162,
+      "longitude": -9.4673,
+      "altitude": 13
+    },
+    // ... autres stations
+  ]
+}</div>
+            </div>
+        </div>
+        
+        <div class="api-section">
+            <h3>Détails d'une station</h3>
+            <div class="api-endpoint">
+                <div class="endpoint-url">
+                    <span class="http-method get-method">GET</span> 
+                    <span>/api/stations/{station_id}</span>
+                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyToClipboard('https://gabonmeteo.ga/api/stations/1')">
+                        <i class="bi bi-clipboard"></i> Copier
+                    </button>
+                </div>
+                <div class="endpoint-description">
+                    <p>Récupérer les détails d'une station météorologique spécifique.</p>
+                </div>
+                <h5>Paramètres de chemin</h5>
+                <table class="table parameter-table">
+                    <thead>
+                        <tr>
+                            <th>Paramètre</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>station_id</td>
+                            <td>Entier</td>
+                            <td>Identifiant unique de la station</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="response-example">
+{
+  "status": "success",
+  "station": {
+    "id": 1,
+    "name": "Libreville",
+    "region": "Estuaire",
+    "latitude": 0.4162,
+    "longitude": -9.4673,
+    "altitude": 13
+  }
+}</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="tab-pane fade" id="current" role="tabpanel" aria-labelledby="current-tab">
+        <div class="api-section">
+            <h3>Données météo actuelles</h3>
+            <div class="api-endpoint">
+                <div class="endpoint-url">
+                    <span class="http-method get-method">GET</span> 
+                    <span>/api/current</span>
+                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyToClipboard('https://gabonmeteo.ga/api/current')">
+                        <i class="bi bi-clipboard"></i> Copier
+                    </button>
+                </div>
+                <div class="endpoint-description">
+                    <p>Récupérer les données météorologiques actuelles pour toutes les stations.</p>
+                </div>
+                <div class="response-example">
+{
+  "status": "success",
+  "count": 5,
+  "data": [
+    {
+      "station_id": 1,
+      "station_name": "Libreville",
+      "region": "Estuaire",
+      "timestamp": "2025-05-11 10:00:00",
+      "temperature": 28.5,
+      "humidity": 85.0,
+      "pressure": 1010.2,
+      "wind_speed": 10.5,
+      "wind_direction": 180,
+      "precipitation": 0.0
+    },
+    // ... autres stations
+  ],
+  "timestamp": "2025-05-11 12:34:56"
+}</div>
+            </div>
+        </div>
+        
+        <div class="api-section">
+            <h3>Données météo actuelles d'une station</h3>
+            <div class="api-endpoint">
+                <div class="endpoint-url">
+                    <span class="http-method get-method">GET</span> 
+                    <span>/api/stations/{station_id}/current</span>
+                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyToClipboard('https://gabonmeteo.ga/api/stations/1/current')">
+                        <i class="bi bi-clipboard"></i> Copier
+                    </button>
+                </div>
+                <div class="endpoint-description">
+                    <p>Récupérer les données météorologiques actuelles pour une station spécifique.</p>
+                </div>
+                <h5>Paramètres de chemin</h5>
+                <table class="table parameter-table">
+                    <thead>
+                        <tr>
+                            <th>Paramètre</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>station_id</td>
+                            <td>Entier</td>
+                            <td>Identifiant unique de la station</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="response-example">
+{
+  "status": "success",
+  "data": {
+    "station_id": 1,
+    "station_name": "Libreville",
+    "region": "Estuaire",
+    "timestamp": "2025-05-11 10:00:00",
+    "temperature": 28.5,
+    "humidity": 85.0,
+    "pressure": 1010.2,
+    "wind_speed": 10.5,
+    "wind_direction": 180,
+    "precipitation": 0.0
+  }
+}</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="tab-pane fade" id="historical" role="tabpanel" aria-labelledby="historical-tab">
+        <div class="api-section">

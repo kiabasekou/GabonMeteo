@@ -4,8 +4,10 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
     #map {
-        height: 400px;
+        height: 500px;  /* Augmenté pour plus d'impact visuel */
         width: 100%;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
     .forecast-card {
         cursor: pointer;
@@ -17,6 +19,28 @@
     .forecast-day {
         font-weight: bold;
         text-align: center;
+    }
+    /* Nouveaux styles pour la légende de carte */
+    .legend {
+        background: white;
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        line-height: 24px;
+    }
+    .legend i {
+        width: 18px;
+        height: 18px;
+        float: left;
+        margin-right: 8px;
+        opacity: 0.7;
+    }
+    .legend .circle {
+        border-radius: 50%;
+        width: 10px;
+        height: 10px;
+        margin-top: 6px;
+        display: inline-block;
     }
 </style>
 {% endblock %}
@@ -88,21 +112,84 @@
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
         
-        // Ajouter des marqueurs pour chaque station
+        // Fonction pour déterminer la couleur selon la température
+        function getColor(temp) {
+            return temp > 35 ? '#d73027' :
+                   temp > 30 ? '#fc8d59' :
+                   temp > 25 ? '#fee090' :
+                   temp > 20 ? '#e0f3f8' :
+                          '#91bfdb';
+        }
+        
+        // Fonction pour obtenir la description de la météo
+        function getWeatherDescription(temp, precip) {
+            if (precip > 10) return "Fortes pluies";
+            if (precip > 5) return "Pluie modérée";
+            if (precip > 0) return "Pluie légère";
+            if (temp > 33) return "Très chaud";
+            if (temp > 28) return "Chaud";
+            if (temp > 23) return "Tempéré";
+            return "Frais";
+        }
+        
+        // Liste pour stocker les marqueurs et ajuster automatiquement la vue
+        var markers = [];
+        
+        // Ajouter des cercles colorés pour chaque station
         {% for station in stations %}
-        var marker = L.marker([{{ station.latitude }}, {{ station.longitude }}]).addTo(map);
-        
         {% if station.id in forecasts %}
-        var forecast = {{ forecasts[station.id][0].temperature|round(1) }};
+        var temperature = {{ forecasts[station.id][0].temperature|round(1) }};
         var precipitation = {{ forecasts[station.id][0].precipitation|round(1) }};
+        var radius = precipitation > 0 ? 20000 + precipitation * 2000 : 20000; // 20km de base, plus large si précipitations
         
-        var popupContent = '<strong>{{ station.name }}</strong><br>' +
-                          'Température: ' + forecast + '°C<br>' +
-                          'Précipitations: ' + precipitation + ' mm';
+        var circle = L.circle([{{ station.latitude }}, {{ station.longitude }}], {
+            color: '#333',
+            fillColor: getColor(temperature),
+            fillOpacity: 0.7,
+            radius: radius,
+            weight: 1
+        }).addTo(map);
         
-        marker.bindPopup(popupContent);
+        var weatherDesc = getWeatherDescription(temperature, precipitation);
+        
+        var popupContent = '<div class="text-center">' +
+                          '<h5>{{ station.name }}</h5>' +
+                          '<p class="mb-1"><strong>' + weatherDesc + '</strong></p>' +
+                          '<p class="mb-1">Température: ' + temperature + '°C</p>' +
+                          '<p class="mb-1">Précipitations: ' + precipitation + ' mm</p>' +
+                          '<p class="mb-1">Humidité: {{ forecasts[station.id][0].humidity|round(0) }}%</p>' +
+                          '</div>';
+        
+        circle.bindPopup(popupContent);
+        
+        // Ajouter un marqueur pour le nom de la station
+        var marker = L.marker([{{ station.latitude }}, {{ station.longitude }}]).addTo(map);
+        marker.bindTooltip("{{ station.name }}", {permanent: true, direction: 'top', className: 'station-label'});
+        markers.push([{{ station.latitude }}, {{ station.longitude }}]);
         {% endif %}
         {% endfor %}
+        
+        // Ajuster la vue pour inclure tous les marqueurs si nécessaire
+        if (markers.length > 0) {
+            var bounds = L.latLngBounds(markers);
+            map.fitBounds(bounds, {padding: [30, 30]});
+        }
+        
+        // Ajouter une légende
+        var legend = L.control({position: 'bottomright'});
+        legend.onAdd = function (map) {
+            var div = L.DomUtil.create('div', 'legend');
+            div.innerHTML += '<h6>Température</h6>';
+            div.innerHTML += '<i class="circle" style="background: #d73027"></i> >35°C<br>';
+            div.innerHTML += '<i class="circle" style="background: #fc8d59"></i> 30-35°C<br>';
+            div.innerHTML += '<i class="circle" style="background: #fee090"></i> 25-30°C<br>';
+            div.innerHTML += '<i class="circle" style="background: #e0f3f8"></i> 20-25°C<br>';
+            div.innerHTML += '<i class="circle" style="background: #91bfdb"></i> <20°C<br>';
+            div.innerHTML += '<h6 class="mt-2">Précipitations</h6>';
+            div.innerHTML += 'La taille du cercle indique<br>le niveau de précipitations';
+            return div;
+        };
+        legend.addTo(map);
     });
 </script>
 {% endblock %}

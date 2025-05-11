@@ -4,6 +4,100 @@
 <style>
     .chart-container {
         height: 400px;
+        margin-bottom: 20px;
+        position: relative;
+    }
+    
+    .combined-chart-container {
+        height: 500px;
+        margin-bottom: 30px;
+        position: relative;
+    }
+    
+    .filter-controls {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        border: 1px solid #dee2e6;
+    }
+    
+    .station-info {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        border-left: 4px solid var(--primary-color);
+    }
+    
+    .station-title {
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .pagination .page-item.active .page-link {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+    
+    .data-summary {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
+    
+    .summary-card {
+        flex: 1;
+        min-width: 200px;
+        margin: 0 10px 10px 0;
+        text-align: center;
+        padding: 15px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+    
+    .summary-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .summary-value {
+        font-size: 1.8rem;
+        font-weight: bold;
+    }
+    
+    .summary-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    
+    .temperature-card {
+        background-color: #fff8f8;
+        border-left: 4px solid #dc3545;
+    }
+    
+    .precipitation-card {
+        background-color: #f8f9ff;
+        border-left: 4px solid #0d6efd;
+    }
+    
+    .humidity-card {
+        background-color: #f8fffa;
+        border-left: 4px solid #198754;
+    }
+    
+    .wind-card {
+        background-color: #fff8fc;
+        border-left: 4px solid #6f42c1;
+    }
+    
+    @media (max-width: 768px) {
+        .summary-card {
+            min-width: 45%;
+            margin-bottom: 15px;
+        }
     }
 </style>
 {% endblock %}
@@ -14,27 +108,66 @@
 
 <div class="row mb-4">
     <div class="col-md-12">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Sélectionner une station</h5>
+        <div class="filter-controls">
+            <form method="GET" action="{{ url_for('main.historical') }}" class="row align-items-end">
+                <div class="col-md-8">
+                    <label for="station" class="form-label">Sélectionner une station</label>
+                    <select class="form-select" name="station" id="station">
+                        {% for station in stations %}
+                        <option value="{{ station.id }}" {% if station.id == selected_station_id %}selected{% endif %}>
+                            {{ station.name }} ({{ station.region }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary w-100">Afficher les données</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% if historical_data %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="station-info">
+            {% for station in stations %}
+                {% if station.id == selected_station_id %}
+                <div class="station-title">{{ station.name }} - {{ station.region }}</div>
+                <div>Coordonnées: {{ station.latitude }}, {{ station.longitude }} | Altitude: {{ station.altitude }}m</div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="data-summary">
+            <div class="summary-card temperature-card">
+                <div class="summary-value">{{ temperatures|sum / temperatures|length|round(1) }}°C</div>
+                <div class="summary-label">Température moyenne</div>
             </div>
-            <div class="card-body">
-                <form method="GET" action="{{ url_for('main.historical') }}">
-                    <div class="row">
-                        <div class="col-md-8">
-                            <select class="form-select" name="station" id="station">
-                                {% for station in stations %}
-                                <option value="{{ station.id }}" {% if station.id == selected_station_id %}selected{% endif %}>
-                                    {{ station.name }} ({{ station.region }})
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <button type="submit" class="btn btn-primary w-100">Afficher les données</button>
-                        </div>
-                    </div>
-                </form>
+            <div class="summary-card precipitation-card">
+                <div class="summary-value">{{ precipitations|sum|round(1) }}mm</div>
+                <div class="summary-label">Précipitations totales</div>
+            </div>
+            <div class="summary-card humidity-card">
+                {% set humidities = [] %}
+                {% for data in historical_data %}
+                    {% set humidities = humidities + [data.humidity] %}
+                {% endfor %}
+                <div class="summary-value">{{ humidities|sum / humidities|length|round(1) }}%</div>
+                <div class="summary-label">Humidité moyenne</div>
+            </div>
+            <div class="summary-card wind-card">
+                {% set wind_speeds = [] %}
+                {% for data in historical_data %}
+                    {% set wind_speeds = wind_speeds + [data.wind_speed] %}
+                {% endfor %}
+                <div class="summary-value">{{ wind_speeds|sum / wind_speeds|length|round(1) }}km/h</div>
+                <div class="summary-label">Vitesse du vent moyenne</div>
             </div>
         </div>
     </div>
@@ -42,6 +175,21 @@
 
 <div class="row">
     <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Visualisation combinée</h5>
+            </div>
+            <div class="card-body">
+                <div class="combined-chart-container">
+                    <canvas id="combinedChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
         <div class="card">
             <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">Températures</h5>
@@ -53,10 +201,7 @@
             </div>
         </div>
     </div>
-</div>
-
-<div class="row mt-4">
-    <div class="col-md-12">
+    <div class="col-md-6">
         <div class="card">
             <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">Précipitations</h5>
@@ -105,10 +250,25 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="d-flex justify-content-center mt-3">
+                    <button class="btn btn-primary" id="exportDataBtn">
+                        <i class="bi bi-download"></i> Exporter les données
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 </div>
+{% else %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="alert alert-info">
+            <h4 class="alert-heading">Aucune donnée disponible</h4>
+            <p>Veuillez sélectionner une station pour afficher les données historiques.</p>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
@@ -119,6 +279,100 @@
         var dates = {{ dates|tojson }};
         var temperatures = {{ temperatures|tojson }};
         var precipitations = {{ precipitations|tojson }};
+        
+        // Graphique combiné température et précipitations
+        var combinedCtx = document.getElementById('combinedChart').getContext('2d');
+        var combinedChart = new Chart(combinedCtx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: 'Température (°C)',
+                    data: temperatures,
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    yAxisID: 'y'
+                }, {
+                    label: 'Précipitations (mm)',
+                    data: precipitations,
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1,
+                    yAxisID: 'y1',
+                    type: 'bar'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        },
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        beginAtZero: false,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Température (°C)'
+                        },
+                        grid: {
+                            color: 'rgba(255, 99, 132, 0.2)'
+                        }
+                    },
+                    y1: {
+                        beginAtZero: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Précipitations (mm)'
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    if (context.dataset.label.includes('Température')) {
+                                        label += context.parsed.y + '°C';
+                                    } else if (context.dataset.label.includes('Précipitations')) {
+                                        label += context.parsed.y + ' mm';
+                                    }
+                                }
+                                return label;
+                            }
+                        }
+                    },
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Température et précipitations combinées'
+                    }
+                }
+            }
+        });
         
         // Graphique des températures
         var tempCtx = document.getElementById('temperatureChart').getContext('2d');
@@ -132,7 +386,8 @@
                     backgroundColor: 'rgba(255, 99, 132, 0.2)',
                     borderColor: 'rgba(255, 99, 132, 1)',
                     borderWidth: 2,
-                    tension: 0.3
+                    tension: 0.3,
+                    fill: true
                 }]
             },
             options: {
@@ -140,7 +395,23 @@
                 maintainAspectRatio: false,
                 scales: {
                     y: {
-                        beginAtZero: false
+                        beginAtZero: false,
+                        title: {
+                            display: true,
+                            text: 'Température (°C)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Évolution des températures'
                     }
                 }
             }
@@ -155,9 +426,9 @@
                 datasets: [{
                     label: 'Précipitations (mm)',
                     data: precipitations,
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
                     borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 2
+                    borderWidth: 1
                 }]
             },
             options: {
@@ -165,10 +436,60 @@
                 maintainAspectRatio: false,
                 scales: {
                     y: {
-                        beginAtZero: true
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Précipitations (mm)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Historique des précipitations'
                     }
                 }
             }
+        });
+        
+        // Gestion de l'export des données
+        document.getElementById('exportDataBtn').addEventListener('click', function() {
+            // Préparation des données CSV
+            var csvContent = "data:text/csv;charset=utf-8,";
+            
+            // En-têtes
+            csvContent += "Date,Temperature,Precipitation,Humidite,Pression,Vitesse_Vent,Direction_Vent\n";
+            
+            // Données
+            for (var i = 0; i < dates.length; i++) {
+                var row = [
+                    dates[i],
+                    temperatures[i],
+                    precipitations[i],
+                    // Ajoutez les autres données si disponibles
+                    "N/A", // Humidité
+                    "N/A", // Pression
+                    "N/A", // Vitesse du vent
+                    "N/A"  // Direction du vent
+                ].join(",");
+                csvContent += row + "\n";
+            }
+            
+            // Créer un lien de téléchargement
+            var encodedUri = encodeURI(csvContent);
+            var link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "donnees_historiques.csv");
+            document.body.appendChild(link);
+            
+            // Télécharger le fichier
+            link.click();
         });
     });
 </script>

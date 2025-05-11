@@ -1,8 +1,95 @@
 {% extends "base.html" %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    #alertMap {
+        height: 450px;
+        width: 100%;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .alert-badge {
+        font-size: 0.85em;
+        padding: 5px 10px;
+    }
+    .legend {
+        background: white;
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        line-height: 24px;
+    }
+    .legend i {
+        width: 18px;
+        height: 18px;
+        float: left;
+        margin-right: 8px;
+        opacity: 0.7;
+    }
+    .station-card {
+        transition: transform 0.3s ease;
+    }
+    .station-card:hover {
+        transform: translateY(-5px);
+    }
+    .alert-popup {
+        text-align: center;
+    }
+    .alert-popup h5 {
+        margin-bottom: 10px;
+    }
+    .alert-status {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    .pulse-danger {
+        animation: pulse-red 2s infinite;
+    }
+    .pulse-warning {
+        animation: pulse-orange 2s infinite;
+    }
+    @keyframes pulse-red {
+        0% {
+            box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+        }
+        70% {
+            box-shadow: 0 0 0 15px rgba(220, 53, 69, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+        }
+    }
+    @keyframes pulse-orange {
+        0% {
+            box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);
+        }
+        70% {
+            box-shadow: 0 0 0 15px rgba(255, 193, 7, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <h1>Alertes météorologiques</h1>
 <p>Système d'alertes pour les phénomènes météorologiques critiques au Gabon.</p>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Carte des alertes</h5>
+            </div>
+            <div class="card-body">
+                <div id="alertMap"></div>
+            </div>
+        </div>
+    </div>
+</div>
 
 {% if alerts %}
 <div class="row mb-4">
@@ -20,16 +107,18 @@
                                 <th>Type d'alerte</th>
                                 <th>Message</th>
                                 <th>Niveau</th>
+                                <th>Date</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for alert in alerts %}
-                            <tr>
+                            <tr class="{% if alert.level == 'danger' %}table-danger{% elif alert.level == 'warning' %}table-warning{% else %}table-info{% endif %}">
                                 <td>{{ alert.station }}</td>
                                 <td>{{ alert.type }}</td>
                                 <td>{{ alert.message }}</td>
                                 <td>
-                                    <span class="badge bg-{{ alert.level }}">
+                                    <span class="badge bg-{{ alert.level }} alert-badge">
                                         {% if alert.level == 'danger' %}
                                         Élevé
                                         {% elif alert.level == 'warning' %}
@@ -38,6 +127,12 @@
                                         Faible
                                         {% endif %}
                                     </span>
+                                </td>
+                                <td>{{ alert.date|default('Aujourd\'hui', true) }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-info" onclick="locateStation('{{ alert.station }}')">
+                                        <i class="bi bi-geo-alt"></i> Localiser
+                                    </button>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -70,10 +165,17 @@
                     {% for station in stations %}
                     {% if station.id in latest_data %}
                     <div class="col-md-4 mb-3">
-                        <div class="card h-100">
-                            <div class="card-header">
-                                <h5>{{ station.name }}</h5>
-                                <small>{{ station.region }}</small>
+                        <div class="card h-100 station-card">
+                            <div class="card-header {% set has_alert = false %}{% for alert in alerts %}{% if alert.station == station.name %}{% set has_alert = true %}{% if alert.level == 'danger' %}bg-danger text-white pulse-danger{% elif alert.level == 'warning' %}bg-warning text-dark pulse-warning{% endif %}{% endif %}{% endfor %}">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="mb-0">{{ station.name }}</h5>
+                                        <small>{{ station.region }}</small>
+                                    </div>
+                                    <button class="btn btn-sm {% if has_alert %}btn-light{% else %}btn-outline-secondary{% endif %}" onclick="locateStation('{{ station.name }}')">
+                                        <i class="bi bi-geo-alt"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div class="card-body">
                                 <div class="row">
@@ -109,7 +211,7 @@
                                         {% if alert.station == station.name %}
                                             {% set has_alert = true %}
                                             <div class="alert alert-{{ alert.level }}">
-                                                {{ alert.type }}: {{ alert.message }}
+                                                <strong>{{ alert.type }}:</strong> {{ alert.message }}
                                             </div>
                                         {% endif %}
                                     {% endfor %}
@@ -145,6 +247,7 @@
                                 <th>Type d'alerte</th>
                                 <th>Description</th>
                                 <th>Seuils de déclenchement</th>
+                                <th>Actions recommandées</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -157,6 +260,13 @@
                                         <li>Alerte élevée: > 10 mm/jour</li>
                                     </ul>
                                 </td>
+                                <td>
+                                    <ul>
+                                        <li>Éviter les zones inondables</li>
+                                        <li>Limiter les déplacements</li>
+                                        <li>Surveiller la montée des eaux</li>
+                                    </ul>
+                                </td>
                             </tr>
                             <tr>
                                 <td>Vents forts</td>
@@ -165,6 +275,13 @@
                                     <ul>
                                         <li>Alerte modérée: > 15 km/h</li>
                                         <li>Alerte élevée: > 25 km/h</li>
+                                    </ul>
+                                </td>
+                                <td>
+                                    <ul>
+                                        <li>Sécuriser les objets extérieurs</li>
+                                        <li>Éviter les zones boisées</li>
+                                        <li>Surveiller les structures vulnérables</li>
                                     </ul>
                                 </td>
                             </tr>
@@ -177,6 +294,13 @@
                                         <li>Alerte élevée: > 35°C</li>
                                     </ul>
                                 </td>
+                                <td>
+                                    <ul>
+                                        <li>S'hydrater régulièrement</li>
+                                        <li>Éviter l'exposition au soleil</li>
+                                        <li>Surveiller les personnes vulnérables</li>
+                                    </ul>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -185,4 +309,148 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialisation de la carte
+        var alertMap = L.map('alertMap').setView([0.4162, 9.4673], 6);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(alertMap);
+        
+        // Dictionnaire pour stocker les coordonnées des stations
+        var stationCoordinates = {};
+        
+        // Ajouter des cercles pour les alertes
+        {% for station in stations %}
+        {% if station.id in latest_data %}
+            // Stocker les coordonnées de la station
+            stationCoordinates['{{ station.name }}'] = [{{ station.latitude }}, {{ station.longitude }}];
+            
+            var has_alert = false;
+            var alert_level = 'success';
+            var alert_message = '';
+            var alert_type = '';
+            var alertCircleOptions = {};
+            
+            {% for alert in alerts %}
+                {% if alert.station == station.name %}
+                    has_alert = true;
+                    alert_level = '{{ alert.level }}';
+                    alert_message = '{{ alert.message }}';
+                    alert_type = '{{ alert.type }}';
+                {% endif %}
+            {% endfor %}
+            
+            // Définir les options du cercle en fonction du niveau d'alerte
+            if (has_alert) {
+                if (alert_level == 'danger') {
+                    alertCircleOptions = {
+                        color: '#d73027',
+                        fillColor: '#d73027',
+                        fillOpacity: 0.5,
+                        radius: 30000,  // 30km pour les alertes importantes
+                        weight: 2,
+                        className: 'pulse-danger'
+                    };
+                } else if (alert_level == 'warning') {
+                    alertCircleOptions = {
+                        color: '#fc8d59',
+                        fillColor: '#fc8d59',
+                        fillOpacity: 0.5,
+                        radius: 25000,  // 25km pour les alertes moyennes
+                        weight: 2,
+                        className: 'pulse-warning'
+                    };
+                } else {
+                    alertCircleOptions = {
+                        color: '#91bfdb',
+                        fillColor: '#91bfdb',
+                        fillOpacity: 0.5,
+                        radius: 20000,  // 20km pour les alertes faibles
+                        weight: 1
+                    };
+                }
+            } else {
+                alertCircleOptions = {
+                    color: '#4caf50',
+                    fillColor: '#4caf50',
+                    fillOpacity: 0.3,
+                    radius: 15000,  // 15km pour les zones sans alerte
+                    weight: 1
+                };
+            }
+            
+            var alertCircle = L.circle([{{ station.latitude }}, {{ station.longitude }}], alertCircleOptions).addTo(alertMap);
+            
+            // Créer un contenu pour le popup
+            var popupContent = '<div class="alert-popup">' +
+                               '<h5>{{ station.name }}</h5>';
+            
+            if (has_alert) {
+                popupContent += '<p class="alert-status text-' + alert_level + '">' + 
+                               alert_type + ': ' + alert_message + '</p>';
+            } else {
+                popupContent += '<p class="alert-status text-success">Aucune alerte en cours</p>';
+            }
+            
+            popupContent += '<p>Température: {{ latest_data[station.id].temperature|round(1) }}°C</p>' +
+                           '<p>Précipitations: {{ latest_data[station.id].precipitation|round(1) }} mm</p>' +
+                           '<p>Vent: {{ latest_data[station.id].wind_speed|round(1) }} km/h</p>';
+            
+            if (has_alert) {
+                popupContent += '<button class="btn btn-sm btn-' + alert_level + ' mt-2" onclick="showAlertDetails(\'' + 
+                               '{{ station.name }}\', \'' + alert_type + '\', \'' + alert_message + '\', \'' + alert_level + 
+                               '\')">Détails de l\'alerte</button>';
+            }
+            
+            popupContent += '</div>';
+            
+            alertCircle.bindPopup(popupContent);
+            
+            // Ajouter un marqueur pour le nom de la station
+            var marker = L.marker([{{ station.latitude }}, {{ station.longitude }}]).addTo(alertMap);
+            marker.bindTooltip("{{ station.name }}", {permanent: true, direction: 'top', className: 'station-label'});
+        {% endif %}
+        {% endfor %}
+        
+        // Ajouter une légende
+        var legend = L.control({position: 'bottomright'});
+        legend.onAdd = function (map) {
+            var div = L.DomUtil.create('div', 'legend');
+            div.innerHTML += '<h6>Niveaux d\'alerte</h6>';
+            div.innerHTML += '<i style="background: #d73027"></i> Alerte élevée<br>';
+            div.innerHTML += '<i style="background: #fc8d59"></i> Alerte moyenne<br>';
+            div.innerHTML += '<i style="background: #91bfdb"></i> Alerte faible<br>';
+            div.innerHTML += '<i style="background: #4caf50"></i> Aucune alerte<br>';
+            return div;
+        };
+        legend.addTo(alertMap);
+        
+        // Fonction globale pour localiser une station
+        window.locateStation = function(stationName) {
+            if (stationCoordinates[stationName]) {
+                alertMap.setView(stationCoordinates[stationName], 10);
+                // Trouver le cercle correspondant à la station et ouvrir son popup
+                alertMap.eachLayer(function(layer) {
+                    if (layer instanceof L.Circle && 
+                        layer.getLatLng().lat == stationCoordinates[stationName][0] && 
+                        layer.getLatLng().lng == stationCoordinates[stationName][1]) {
+                        layer.openPopup();
+                    }
+                });
+            }
+        };
+        
+        // Fonction pour afficher les détails d'une alerte
+        window.showAlertDetails = function(station, type, message, level) {
+            // Vous pourriez ici ouvrir une modale avec plus de détails
+            alert('Alerte à ' + station + '\nType: ' + type + '\nMessage: ' + message);
+        };
+    });
+</script>
 {% endblock %}
