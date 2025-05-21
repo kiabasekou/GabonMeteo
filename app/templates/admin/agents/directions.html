@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}Gestion des directions et services - GabonMétéo+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Directions et services</h1>
+    <a href="{{ url_for('admin_agent.index') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Retour aux agents
+    </a>
+</div>
+
+<div class="row">
+    <!-- Directions -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Directions</h5>
+            </div>
+            <div class="card-body">
+                <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addDirectionModal">
+                    <i class="bi bi-plus-circle"></i> Ajouter une direction
+                </button>
+                
+                {% if directions %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nom</th>
+                                <th>Description</th>
+                                <th>Services</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for direction in directions %}
+                            <tr>
+                                <td>{{ direction.id }}</td>
+                                <td>{{ direction.name }}</td>
+                                <td>{{ direction.description }}</td>
+                                <td>{{ direction.services.count() }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    Aucune direction n'a été créée. Ajoutez-en une maintenant.
+                </div>
+                {% endif %}
+                
+                <!-- Modal d'ajout de direction -->
+                <div class="modal fade" id="addDirectionModal" tabindex="-1" aria-labelledby="addDirectionModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header bg-primary text-white">
+                                <h5 class="modal-title" id="addDirectionModalLabel">Ajouter une direction</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <form method="POST" action="{{ url_for('admin_agent.add_direction') }}">
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label for="name" class="form-label">Nom de la direction *</label>
+                                        <input type="text" class="form-control" id="name" name="name" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="description" class="form-label">Description</label>
+                                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                    <button type="submit" class="btn btn-primary">Ajouter</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Services -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Services</h5>
+            </div>
+            <div class="card-body">
+                <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addServiceModal" {% if not directions %}disabled{% endif %}>
+                    <i class="bi bi-plus-circle"></i> Ajouter un service
+                </button>
+                
+                {% if services %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nom</th>
+                                <th>Direction</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for service in services %}
+                            <tr>
+                                <td>{{ service.id }}</td>
+                                <td>{{ service.name }}</td>
+                                <td>{{ service.direction.name }}</td>
+                                <td>{{ service.description }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    Aucun service n'a été créé. Ajoutez-en un maintenant.
+                </div>
+                {% endif %}
+                
+                <!-- Modal d'ajout de service -->
+                <div class="modal fade" id="addServiceModal" tabindex="-1" aria-labelledby="addServiceModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header bg-primary text-white">
+                                <h5 class="modal-title" id="addServiceModalLabel">Ajouter un service</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <form method="POST" action="{{ url_for('admin_agent.add_service') }}">
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label for="direction_id" class="form-label">Direction *</label>
+                                        <select class="form-select" id="direction_id" name="direction_id" required>
+                                            <option value="" selected disabled>Sélectionnez une direction</option>
+                                            {% for direction in directions %}
+                                            <option value="{{ direction.id }}">{{ direction.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="name" class="form-label">Nom du service *</label>
+                                        <input type="text" class="form-control" id="name" name="name" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="description" class="form-label">Description</label>
+                                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                    <button type="submit" class="btn btn-primary">Ajouter</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Organigramme</h5>
+            </div>
+            <div class="card-body">
+                {% if directions %}
+                <ul class="list-group">
+                    {% for direction in directions %}
+                    <li class="list-group-item">
+                        <h6><i class="bi bi-diagram-3"></i> {{ direction.name }}</h6>
+                        {% if direction.services.count() > 0 %}
+                        <ul class="list-group list-group-flush mt-2">
+                            {% for service in direction.services %}
+                            <li class="list-group-item ps-5">
+                                <i class="bi bi-diagram-2"></i> {{ service.name }}
+                                <small class="text-muted">{{ service.description }}</small>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="text-muted ms-4 mb-0"><small>Aucun service dans cette direction</small></p>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="alert alert-info">
+                    Aucune direction n'a été créée. L'organigramme sera disponible une fois que vous aurez ajouté des directions et des services.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

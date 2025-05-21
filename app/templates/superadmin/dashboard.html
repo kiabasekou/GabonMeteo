@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}Tableau de bord Super Admin - GabonMétéo+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        transition: all 0.3s ease;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .log-container {
+        max-height: 400px;
+        overflow-y: auto;
+        background-color: #222;
+        color: #eee;
+        font-family: monospace;
+        padding: 15px;
+        border-radius: 4px;
+    }
+    .log-line {
+        margin-bottom: 5px;
+    }
+    .stat-icon {
+        font-size: 3rem;
+        opacity: 0.2;
+        position: absolute;
+        right: 15px;
+        bottom: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-shield-lock"></i> Tableau de bord Super Admin</h1>
+    <div>
+        <a href="{{ url_for('superadmin.system_settings') }}" class="btn btn-primary">
+            <i class="bi bi-gear-fill"></i> Paramètres système
+        </a>
+    </div>
+</div>
+
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle-fill"></i> <strong>Attention!</strong> 
+    Cette section est réservée au super administrateur. Toutes les actions effectuées ici sont journalisées.
+</div>
+
+<!-- Statistiques du système -->
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="card bg-primary text-white stat-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Utilisateurs</h5>
+                <h1 class="display-4">{{ stats.users_count }}</h1>
+                <p class="card-text">
+                    Dont {{ stats.admins_count }} administrateurs
+                </p>
+                <i class="bi bi-people-fill stat-icon"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card bg-success text-white stat-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Agents DGM</h5>
+                <h1 class="display-4">{{ stats.agents_count }}</h1>
+                <p class="card-text">
+                    Répartis dans {{ stats.directions_count }} directions et {{ stats.services_count }} services
+                </p>
+                <i class="bi bi-person-badge stat-icon"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card bg-info text-white stat-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Stations Météo</h5>
+                <h1 class="display-4">{{ stats.stations_count }}</h1>
+                <p class="card-text">
+                    Présentes à travers le Gabon
+                </p>
+                <i class="bi bi-broadcast-pin stat-icon"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Actions rapides -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-lightning-charge"></i> Actions rapides</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-2 col-6 mb-3">
+                        <a href="{{ url_for('superadmin.system_settings') }}" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                            <i class="bi bi-gear-fill mb-2" style="font-size: 2rem;"></i>
+                            <span>Paramètres</span>
+                        </a>
+                    </div>
+                    <div class="col-md-2 col-6 mb-3">
+                        <a href="{{ url_for('superadmin.user_roles') }}" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                            <i class="bi bi-people-fill mb-2" style="font-size: 2rem;"></i>
+                            <span>Rôles</span>
+                        </a>
+                    </div>
+                    <div class="col-md-2 col-6 mb-3">
+                        <a href="{{ url_for('superadmin.import_data') }}" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                            <i class="bi bi-upload mb-2" style="font-size: 2rem;"></i>
+                            <span>Import</span>
+                        </a>
+                    </div>
+                    <div class="col-md-2 col-6 mb-3">
+                        <a href="{{ url_for('superadmin.system_backup') }}" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                            <i class="bi bi-archive-fill mb-2" style="font-size: 2rem;"></i>
+                            <span>Sauvegarde</span>
+                        </a>
+                    </div>
+                    <div class="col-md-2 col-6 mb-3">
+                        <a href="{{ url_for('superadmin.system_logs') }}" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                            <i class="bi bi-journal-text mb-2" style="font-size: 2rem;"></i>
+                            <span>Journaux</span>
+                        </a>
+                    </div>
+                    <div class="col-md-2 col-6 mb-3">
+                        <a href="{{ url_for('admin_agent.index') }}" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                            <i class="bi bi-person-badge mb-2" style="font-size: 2rem;"></i>
+                            <span>Agents</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Journaux récents -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="bi bi-journal-text"></i> Activité récente (journaux)</h5>
+            </div>
+            <div class="card-body">
+                <div class="log-container">
+                    {% if recent_logs %}
+                        {% for log in recent_logs %}
+                            <div class="log-line">{{ log }}</div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="log-line">Aucun journal disponible.</div>
+                    {% endif %}
+                </div>
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('superadmin.system_logs') }}" class="btn btn-sm btn-dark">
+                        <i class="bi bi-journal-text"></i> Voir tous les journaux
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

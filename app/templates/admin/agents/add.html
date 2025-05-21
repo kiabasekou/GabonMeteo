@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Ajouter un agent - GabonMétéo+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Ajouter un nouvel agent</h1>
+    <a href="{{ url_for('admin_agent.index') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Retour à la liste
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Formulaire d'ajout d'agent</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin_agent.add_agent') }}">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="border-bottom pb-2 mb-3">Informations personnelles</h6>
+                            
+                            <div class="mb-3">
+                                <label for="matricule" class="form-label">Matricule solde *</label>
+                                <input type="text" class="form-control" id="matricule" name="matricule" required>
+                                <small class="form-text text-muted">Numéro d'identification unique de l'agent</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="user_id" class="form-label">Utilisateur *</label>
+                                <select class="form-select" id="user_id" name="user_id" required>
+                                    <option value="" selected disabled>Sélectionnez un utilisateur</option>
+                                    {% for user in users %}
+                                    <option value="{{ user.id }}">{{ user.username }} ({{ user.email }})</option>
+                                    {% endfor %}
+                                </select>
+                                <small class="form-text text-muted">Compte utilisateur associé à cet agent</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="date_naissance" class="form-label">Date de naissance *</label>
+                                <input type="date" class="form-control" id="date_naissance" name="date_naissance" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="date_embauche" class="form-label">Date d'embauche</label>
+                                <input type="date" class="form-control" id="date_embauche" name="date_embauche">
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6 class="border-bottom pb-2 mb-3">Affectation professionnelle</h6>
+                            
+                            <div class="mb-3">
+                                <label for="fonction" class="form-label">Fonction *</label>
+                                <input type="text" class="form-control" id="fonction" name="fonction" required>
+                                <small class="form-text text-muted">Poste ou fonction occupé par l'agent</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="service_id" class="form-label">Service *</label>
+                                <select class="form-select" id="service_id" name="service_id" required>
+                                    <option value="" selected disabled>Sélectionnez un service</option>
+                                    {% for service in services %}
+                                    <option value="{{ service.id }}">{{ service.name }} ({{ service.direction.name }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="station_id" class="form-label">Station d'affectation</label>
+                                <select class="form-select" id="station_id" name="station_id">
+                                    <option value="">Aucune station</option>
+                                    {% for station in stations %}
+                                    <option value="{{ station.id }}">{{ station.name }} ({{ station.region }})</option>
+                                    {% endfor %}
+                                </select>
+                                <small class="form-text text-muted">Station météorologique à laquelle l'agent est affecté</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <button type="reset" class="btn btn-secondary me-md-2">
+                            <i class="bi bi-arrow-counterclockwise"></i> Réinitialiser
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-person-plus"></i> Ajouter l'agent
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Informations importantes</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i> <strong>Avant d'ajouter un agent</strong>, assurez-vous que:
+                    <ol>
+                        <li>L'utilisateur existe déjà dans le système (compte créé)</li>
+                        <li>Le matricule solde est unique et correct</li>
+                        <li>Le service et la direction sont correctement sélectionnés</li>
+                    </ol>
+                </div>
+                
+                <h6>Remarques</h6>
+                <ul>
+                    <li>Les champs marqués d'un astérisque (*) sont obligatoires.</li>
+                    <li>L'affectation à une station est facultative et peut être modifiée ultérieurement.</li>
+                    <li>Un utilisateur ne peut être associé qu'à un seul agent.</li>
+                </ul>
+                
+                <p>Si l'utilisateur n'existe pas encore, <a href="{{ url_for('auth.register') }}">créez d'abord un compte utilisateur</a>.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

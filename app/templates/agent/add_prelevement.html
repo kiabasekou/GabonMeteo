@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Nouveau prélèvement - GabonMétéo+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Nouveau prélèvement</h1>
+    <a href="{{ url_for('agent.prelevements') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Retour aux prélèvements
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Formulaire de saisie</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('agent.add_prelevement') }}">
+                    <div class="row">
+                        <!-- Colonne de gauche -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="station_id" class="form-label">Station *</label>
+                                <select class="form-select" id="station_id" name="station_id" required>
+                                    {% if stations|length == 1 %}
+                                    <option value="{{ stations[0].id }}" selected>{{ stations[0].name }} ({{ stations[0].region }})</option>
+                                    {% else %}
+                                    <option value="" selected disabled>Sélectionnez une station</option>
+                                    {% for station in stations %}
+                                    <option value="{{ station.id }}">{{ station.name }} ({{ station.region }})</option>
+                                    {% endfor %}
+                                    {% endif %}
+                                </select>
+                                <small class="form-text text-muted">Station où le prélèvement a été effectué</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="date_prelevement" class="form-label">Date du prélèvement *</label>
+                                <input type="date" class="form-control" id="date_prelevement" name="date_prelevement" required>
+                                <small class="form-text text-muted">Date à laquelle le prélèvement a été effectué</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="time_prelevement" class="form-label">Heure du prélèvement *</label>
+                                <input type="time" class="form-control" id="time_prelevement" name="time_prelevement" required>
+                                <small class="form-text text-muted">Heure à laquelle le prélèvement a été effectué</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Colonne de droite -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="temperature" class="form-label">Température (°C) *</label>
+                                <input type="number" step="0.1" class="form-control" id="temperature" name="temperature" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="humidity" class="form-label">Humidité (%)</label>
+                                <input type="number" step="0.1" class="form-control" id="humidity" name="humidity">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="pressure" class="form-label">Pression atmosphérique (hPa)</label>
+                                <input type="number" step="0.1" class="form-control" id="pressure" name="pressure">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Deuxième rangée -->
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="wind_speed" class="form-label">Vitesse du vent (km/h)</label>
+                                <input type="number" step="0.1" class="form-control" id="wind_speed" name="wind_speed">
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="wind_direction" class="form-label">Direction du vent (°)</label>
+                                <input type="number" step="1" class="form-control" id="wind_direction" name="wind_direction">
+                                <small class="form-text text-muted">0° = Nord, 90° = Est, 180° = Sud, 270° = Ouest</small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="precipitation" class="form-label">Précipitations (mm)</label>
+                                <input type="number" step="0.1" class="form-control" id="precipitation" name="precipitation">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes et observations</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="4"></textarea>
+                        <small class="form-text text-muted">Ajoutez toute information pertinente concernant les conditions météorologiques ou les circonstances du prélèvement</small>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="reset" class="btn btn-secondary me-md-2">
+                            <i class="bi bi-arrow-counterclockwise"></i> Réinitialiser
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Enregistrer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Guide de saisie</h5>
+            </div>
+            <div class="card-body">
+                <h6>Instructions pour la saisie des données</h6>
+                <ul>
+                    <li><strong>Température:</strong> Relevez la température à l'ombre, en évitant les surfaces réfléchissantes ou les sources de chaleur.</li>
+                    <li><strong>Humidité:</strong> Relevez l'humidité relative de l'air, mesurée par un hygromètre.</li>
+                    <li><strong>Pression atmosphérique:</strong> Relevez la pression atmosphérique indiquée par le baromètre, sans correction d'altitude.</li>
+                    <li><strong>Vitesse du vent:</strong> Utilisez un anémomètre pour mesurer la vitesse moyenne du vent (sur 10 minutes).</li>
+                    <li><strong>Direction du vent:</strong> Indiquez la direction d'où vient le vent en degrés par rapport au Nord.</li>
+                    <li><strong>Précipitations:</strong> Relevez la quantité d'eau recueillie dans le pluviomètre depuis le dernier relevé.</li>
+                </ul>
+                
+                <h6>Remarques importantes</h6>
+                <ul>
+                    <li>Les champs marqués d'un astérisque (*) sont obligatoires.</li>
+                    <li>Les prélèvements sont soumis à validation par un administrateur avant d'être intégrés aux données officielles.</li>
+                    <li>Vérifiez soigneusement vos saisies avant de les enregistrer.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Définir la date du jour par défaut
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        
+        document.getElementById('date_prelevement').value = `${year}-${month}-${day}`;
+        
+        // Définir l'heure actuelle arrondie à l'heure près
+        const hours = String(today.getHours()).padStart(2, '0');
+        const minutes = '00';
+        
+        document.getElementById('time_prelevement').value = `${hours}:${minutes}`;
+    });
+</script>
+{% endblock %}

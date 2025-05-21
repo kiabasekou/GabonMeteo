@@ -222,7 +222,11 @@
     
     <div class="data-summary">
         <div class="summary-card" style="background-color: #fff8f8; border-left: 4px solid #dc3545;">
-            <div class="summary-value">{{ avg_temp|round(1) }}°C</div>
+            {% if avg_temp is not none %}
+                <div class="summary-value">{{ avg_temp|round(1) }}°C</div>
+            {% else %}
+                <div class="summary-value">N/A</div>
+            {% endif %}
             <div class="summary-label">Température moyenne</div>
         </div>
         

@@ -161,3 +161,39 @@ footer {
     background-color: #212529 !important;
     color: #f8f9fa;
 }
+
+/* Amélioration du dropdown modules */
+#modulesDropdown + .dropdown-menu {
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    border: none;
+}
+
+#modulesDropdown + .dropdown-menu .dropdown-item {
+    padding: 0.7rem 1.5rem;
+    transition: all 0.3s ease;
+}
+
+#modulesDropdown + .dropdown-menu .dropdown-item:hover {
+    background-color: var(--primary-color);
+    color: white;
+    transform: translateX(5px);
+}
+
+#modulesDropdown + .dropdown-menu .dropdown-item i {
+    width: 20px;
+    text-align: center;
+    margin-right: 10px;
+}
+
+/* Animation pour le dropdown */
+#modulesDropdown + .dropdown-menu {
+    transform: scale(0.95);
+    opacity: 0;
+    transition: all 0.2s ease;
+}
+
+#modulesDropdown + .dropdown-menu.show {
+    transform: scale(1);
+    opacity: 1;
+}

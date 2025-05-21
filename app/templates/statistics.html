@@ -1,7 +1,52 @@
 {% extends "base.html" %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
+    /* CORRECTION SPÉCIFIQUE POUR LA CARTE */
+    #region-map-container {
+        height: 450px;
+        width: 100%;
+        position: relative;
+        border-radius: 5px;
+        overflow: hidden;
+    }
+    
+    #region-map {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 5px;
+    }
+    
+    /* Reset Leaflet CSS conflicts */
+    .leaflet-container {
+        font-family: inherit !important;
+    }
+    
+    .leaflet-popup-content-wrapper {
+        border-radius: 5px;
+    }
+    
+    .leaflet-popup-content {
+        margin: 10px;
+    }
+    
+    /* Assurez-vous que les contrôles Leaflet sont visibles */
+    .leaflet-control-zoom {
+        margin-left: 10px !important;
+        margin-top: 10px !important;
+    }
+    
+    .leaflet-control-attribution {
+        background-color: rgba(255, 255, 255, 0.8) !important;
+    }
+    
+    /* Autres styles existants... */
+   
+
     .stats-container {
         margin-bottom: 30px;
     }
@@ -250,7 +295,6 @@
         </div>
     </div>
 </div>
-
 <div class="row mb-4">
     <div class="col-md-12">
         <div class="card stats-card">
@@ -260,16 +304,8 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-7">
-                        <!-- Structure améliorée pour le conteneur de la carte -->
-                        <div id="region-map-container" style="width: 100%; height: 450px; position: relative; border-radius: 5px; overflow: hidden; background-color: #f8f9fa;">
-                            <div id="region-map" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;"></div>
-                            <!-- Ajout d'un message de chargement -->
-                            <div id="map-loading" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background-color: rgba(255,255,255,0.7); z-index: 2;">
-                                <div class="spinner-border text-primary" role="status">
-                                    <span class="visually-hidden">Chargement...</span>
-                                </div>
-                                <span class="ms-2">Chargement de la carte...</span>
-                            </div>
+                        <div id="region-map-container">
+                            <div id="region-map"></div>
                         </div>
                     </div>
                     <div class="col-md-5">
@@ -300,49 +336,7 @@
         </div>
     </div>
 </div>
-<div class="row mb-4">
-    <div class="col-md-4">
-        <div class="card stats-card h-100">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Humidité relative</h5>
-            </div>
-            <div class="card-body">
-                <div class="small-chart-container">
-                    <canvas id="humidityChart"></canvas>
-                </div>
-                <div class="mt-3">
-                    <h6>Observations clés :</h6>
-                    <ul>
-                        <li>Humidité moyenne plus élevée pendant la saison des pluies (80-95%)</li>
-                        <li>Légère diminution pendant la saison sèche (70-85%)</li>
-                        <li>Variations diurnes importantes (±15%)</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-4">
-        <div class="card stats-card h-100">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Vents dominants</h5>
-            </div>
-            <div class="card-body">
-                <div class="small-chart-container">
-                    <canvas id="windRoseChart"></canvas>
-                </div>
-                <div class="mt-3">
-                    <h6>Observations clés :</h6>
-                    <ul>
-                        <li>Vents dominants du sud-ouest sur la côte</li>
-                        <li>Vents plus faibles et variables à l'intérieur des terres</li>
-                        <li>Vitesse moyenne annuelle de 9.2 km/h</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-    
+
     <div class="col-md-4">
         <div class="card stats-card h-100">
             <div class="card-header bg-primary text-white">
@@ -877,72 +871,81 @@
             }
         }
         
-        // Essayer d'initialiser la carte Leaflet d'abord
-        try {
-            // Vérifier si Leaflet est disponible
-            if (typeof L !== 'undefined') {
-                // Initialiser une carte Leaflet simplifiée
-                const mapElement = document.getElementById('region-map');
-                const loadingElement = document.getElementById('map-loading');
-                
-                if (mapElement) {
-                    const map = L.map('region-map').setView([0.4162, 9.4673], 6);
-                    
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                    }).addTo(map);
-                    
-                    // Masquer l'indicateur de chargement
-                    if (loadingElement) {
-                        loadingElement.style.display = 'none';
-                    }
-                    
-                    // Ajouter quelques cercles représentant les zones climatiques
-                    L.circle([-0.7193, 8.7815], {
-                        color: '#3498db',
-                        fillColor: '#3498db',
-                        fillOpacity: 0.2,
-                        radius: 100000
-                    }).addTo(map).bindPopup("<b>Zone côtière</b><br>Climat équatorial maritime");
-                    
-                    L.circle([-0.7001, 10.2406], {
-                        color: '#2ecc71',
-                        fillColor: '#2ecc71',
-                        fillOpacity: 0.2,
-                        radius: 120000
-                    }).addTo(map).bindPopup("<b>Zone équatoriale centrale</b><br>Climat équatorial typique");
-                    
-                    L.circle([1.5995, 11.5793], {
-                        color: '#f39c12',
-                        fillColor: '#f39c12',
-                        fillOpacity: 0.2,
-                        radius: 100000
-                    }).addTo(map).bindPopup("<b>Zone nord</b><br>Climat tropical humide");
-                    
-                    L.circle([-1.6333, 13.5833], {
-                        color: '#9b59b6',
-                        fillColor: '#9b59b6',
-                        fillOpacity: 0.2,
-                        radius: 100000
-                    }).addTo(map).bindPopup("<b>Zone est/plateau</b><br>Climat plus frais");
-                    
-                    console.log('Carte Leaflet initialisée avec succès');
-                    
-                    // S'assurer que la carte est correctement dimensionnée
-                    setTimeout(function() {
-                        map.invalidateSize();
-                    }, 500);
-                }
-            } else {
-                // Si Leaflet n'est pas disponible, utiliser une image statique
-                console.warn('Leaflet n\'est pas disponible, utilisation d\'une image statique à la place');
-                createStaticMap();
+        
+        function initRegionMap() {
+            // Vérifier si l'élément de carte existe
+            const mapElement = document.getElementById('region-map');
+            if (!mapElement) {
+                console.error("L'élément #region-map n'existe pas dans le DOM");
+                return;
             }
-        } catch (error) {
-            // En cas d'erreur, utiliser une image statique
-            console.error('Erreur lors de l\'initialisation de la carte Leaflet:', error);
-            createStaticMap();
+            
+            // Créer la carte avec les mêmes paramètres que les autres pages
+            const regionMap = L.map('region-map').setView([0.4162, 9.4673], 6);
+            
+            // Ajouter le fond de carte OpenStreetMap
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(regionMap);
+            
+            // Forcer la mise à jour de la taille de la carte
+            setTimeout(function() {
+                regionMap.invalidateSize();
+            }, 100);
+            
+            // Ajouter les zones climatiques
+            const zones = [
+                { lat: -0.7193, lng: 8.7815, color: '#3498db', name: 'Zone côtière', desc: 'Climat équatorial maritime' },
+                { lat: -0.7001, lng: 10.2406, color: '#2ecc71', name: 'Zone équatoriale centrale', desc: 'Climat équatorial typique' },
+                { lat: 1.5995, lng: 11.5793, color: '#f39c12', name: 'Zone nord', desc: 'Climat tropical humide' },
+                { lat: -1.6333, lng: 13.5833, color: '#9b59b6', name: 'Zone est/plateau', desc: 'Climat plus frais' }
+            ];
+            
+            zones.forEach(zone => {
+                L.circle([zone.lat, zone.lng], {
+                    color: zone.color,
+                    fillColor: zone.color,
+                    fillOpacity: 0.2,
+                    radius: 100000
+                }).addTo(regionMap).bindPopup(`<b>${zone.name}</b><br>${zone.desc}`);
+            });
+            
+            // Ajouter les marqueurs des stations
+            {% for station in stations %}
+            L.marker([{{ station.latitude }}, {{ station.longitude }}])
+                .addTo(regionMap)
+                .bindPopup("<b>{{ station.name }}</b><br>{{ station.region }}");
+            {% endfor %}
+            
+            // Ajouter une légende similaire aux autres pages
+            const legend = L.control({position: 'bottomright'});
+            legend.onAdd = function(map) {
+                const div = L.DomUtil.create('div', 'info legend');
+                div.innerHTML = '<div style="background: white; padding: 8px; border-radius: 4px; box-shadow: 0 0 10px rgba(0,0,0,0.1); font-size: 0.85rem;">';
+                div.innerHTML += '<strong>Zones climatiques</strong><br>';
+                div.innerHTML += '<span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#3498db; margin-right:5px;"></span> Côtière<br>';
+                div.innerHTML += '<span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#2ecc71; margin-right:5px;"></span> Équatoriale<br>';
+                div.innerHTML += '<span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#f39c12; margin-right:5px;"></span> Nord<br>';
+                div.innerHTML += '<span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#9b59b6; margin-right:5px;"></span> Est<br>';
+                div.innerHTML += '</div>';
+                return div;
+            };
+            legend.addTo(regionMap);
+            
+            console.log('Carte régionale initialisée avec succès');
         }
+        
+        // Initialiser la carte après un court délai
+        setTimeout(initRegionMap, 100);
+        
+        // Gestion du redimensionnement
+        window.addEventListener('resize', function() {
+            const mapContainer = document.querySelector('#region-map');;
+            if (mapContainer && mapContainer._leaflet_id) {
+                mapContainer._leaflet_map.invalidateSize();
+            }
+        });
     });
+
 </script>
 {% endblock %}

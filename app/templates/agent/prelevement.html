@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+
+{% block title %}Mes prélèvements - GabonMétéo+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Mes prélèvements</h1>
+    <div>
+        <a href="{{ url_for('agent.dashboard') }}" class="btn btn-secondary me-2">
+            <i class="bi bi-arrow-left"></i> Tableau de bord
+        </a>
+        <a href="{{ url_for('agent.add_prelevement') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nouveau prélèvement
+        </a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Filtres</h5>
+            </div>
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('agent.prelevements') }}">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="station_id" class="form-label">Station</label>
+                            <select class="form-select" id="station_id" name="station_id">
+                                <option value="">Toutes les stations</option>
+                                {% if agent.station %}
+                                <option value="{{ agent.station.id }}" {% if request.args.get('station_id')|int == agent.station.id %}selected{% endif %}>
+                                    {{ agent.station.name }}
+                                </option>
+                                {% else %}
+                                {% for station in stations %}
+                                <option value="{{ station.id }}" {% if request.args.get('station_id')|int == station.id %}selected{% endif %}>
+                                    {{ station.name }}
+                                </option>
+                                {% endfor %}
+                                {% endif %}
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="status" class="form-label">Statut</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">Tous les statuts</option>
+                                <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>En attente</option>
+                                <option value="validated" {% if request.args.get('status') == 'validated' %}selected{% endif %}>Validé</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="date_from" class="form-label">Date de début</label>
+                            <input type="date" class="form-control" id="date_from" name="date_from" value="{{ request.args.get('date_from', '') }}">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="date_to" class="form-label">Date de fin</label>
+                            <input type="date" class="form-control" id="date_to" name="date_to" value="{{ request.args.get('date_to', '') }}">
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-filter"></i> Filtrer
+                        </button>
+                        <a href="{{ url_for('agent.prelevements') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Réinitialiser
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Liste des prélèvements</h5>
+            </div>
+            <div class="card-body">
+                {% if prelevements %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Date du prélèvement</th>
+                                <th>Date d'enregistrement</th>
+                                <th>Station</th>
+                                <th>Température (°C)</th>
+                                <th>Humidité (%)</th>
+                                <th>Précipitation (mm)</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for prelevement in prelevements %}
+                            <tr>
+                                <td>{{ prelevement.id }}</td>
+                                <td>{{ prelevement.date_prelevement.strftime('%d/%m/%Y %H:%M') }}</td>
+                                <td>{{ prelevement.timestamp.strftime('%d/%m/%Y %H:%M') }}</td>
+                                <td>{{ prelevement.station.name }}</td>
+                                <td>{{ prelevement.temperature|round(1) }}</td>
+                                <td>{{ prelevement.humidity|round(1) if prelevement.humidity != None else "N/A" }}</td>
+                                <td>{{ prelevement.precipitation|round(1) if prelevement.precipitation != None else "N/A" }}</td>
+                                <td>
+                                    {% if prelevement.validated %}
+                                    <span class="badge bg-success">Validé</span>
+                                    {% else %}
+                                    <span class="badge bg-warning text-dark">En attente</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#viewPrelevementModal{{ prelevement.id }}">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    
+                                    {% if not prelevement.validated %}
+                                    <a href="{{ url_for('agent.edit_prelevement', id=prelevement.id) }}" class="btn btn-sm btn-warning">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deletePrelevementModal{{ prelevement.id }}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                    
+                                    <!-- Modal de visualisation des détails -->
+                                    <div class="modal fade" id="viewPrelevementModal{{ prelevement.id }}" tabindex="-1" aria-labelledby="viewPrelevementModalLabel{{ prelevement.id }}" aria-hidden="true">
+                                        <div class="modal-dialog modal-lg">
+                                            <div class="modal-content">
+                                                <div class="modal-header bg-info text-white">
+                                                    <h5 class="modal-title" id="viewPrelevementModalLabel{{ prelevement.id }}">Détails du prélèvement #{{ prelevement.id }}</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <h6>Informations générales</h6>
+                                                            <table class="table table-borderless">
+                                                                <tr>
+                                                                    <th>Station:</th>
+                                                                    <td>{{ prelevement.station.name }} ({{ prelevement.station.region }})</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <th>Date du prélèvement:</th>
+                                                                    <td>{{ prelevement.date_prelevement.strftime('%d/%m/%Y %H:%M') }}</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <th>Date d'enregistrement:</th>
+                                                                    <td>{{ prelevement.timestamp.strftime('%d/%m/%Y %H:%M') }}</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <th>Statut:</th>
+                                                                    <td>
+                                                                        {% if prelevement.validated %}
+                                                                        <span class="badge bg-success">Validé</span>
+                                                                        {% else %}
+                                                                        <span class="badge bg-warning text-dark">En attente</span>
+                                                                        {% endif %}
+                                                                    </td>
+                                                                </tr>
+                                                            </table>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <h6>Données météorologiques</h6>
+                                                            <table class="table table-borderless">
+                                                                <tr>
+                                                                    <th>Température:</th>
+                                                                    <td>{{ prelevement.temperature|round(1) }}°C</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <th>Humidité:</th>
+                                                                    <td>{{ prelevement.humidity|round(1) if prelevement.humidity != None else "N/A" }}%</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <th>Pression:</th>
+                                                                    <td>{{ prelevement.pressure|round(1) if prelevement.pressure != None else "N/A" }} hPa</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <th>Vitesse du vent:</th>
+                                                                    <td>{{ prelevement.wind_speed|round(1) if prelevement.wind_speed != None else "N/A" }} km/h</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <th>Direction du vent:</th>
+                                                                    <td>{{ prelevement.wind_direction|round(0) if prelevement.wind_direction != None else "N/A" }}°</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <th>Précipitations:</th>
+                                                                    <td>{{ prelevement.precipitation|round(1) if prelevement.precipitation != None else "N/A" }} mm</td>
+                                                                </tr>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    {% if prelevement.notes %}
+                                                    <div class="row mt-3">
+                                                        <div class="col-md-12">
+                                                            <h6>Notes</h6>
+                                                            <div class="card">
+                                                                <div class="card-body">
+                                                                    {{ prelevement.notes|nl2br }}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                                                    {% if not prelevement.validated %}
+                                                    <a href="{{ url_for('agent.edit_prelevement', id=prelevement.id) }}" class="btn btn-warning">
+                                                        <i class="bi bi-pencil"></i> Modifier
+                                                    </a>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Modal de confirmation de suppression -->
+                                    {% if not prelevement.validated %}
+                                    <div class="modal fade" id="deletePrelevementModal{{ prelevement.id }}" tabindex="-1" aria-labelledby="deletePrelevementModalLabel{{ prelevement.id }}" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header bg-danger text-white">
+                                                    <h5 class="modal-title" id="deletePrelevementModalLabel{{ prelevement.id }}">Confirmation de suppression</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p>Êtes-vous sûr de vouloir supprimer ce prélèvement du {{ prelevement.date_prelevement.strftime('%d/%m/%Y') }} ?</p>
+                                                    <p class="text-danger"><strong>Cette action est irréversible.</strong></p>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                    <form action="{{ url_for('agent.delete_prelevement', id=prelevement.id) }}" method="POST">
+                                                        <button type="submit" class="btn btn-danger">Supprimer</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                <nav class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if pagination.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('agent.prelevements', page=pagination.prev_num, **request.args) }}">Précédent</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">Précédent</span>
+                        </li>
+                        {% endif %}
+                        
+                        {% for page in pagination.iter_pages() %}
+                            {% if page %}
+                                {% if page != pagination.page %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('agent.prelevements', page=page, **request.args) }}">{{ page }}</a>
+                                </li>
+                                {% else %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page }}</span>
+                                </li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('agent.prelevements', page=pagination.next_num, **request.args) }}">Suivant</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">Suivant</span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% else %}
+                <div class="text-center">
+                    <p>Aucun prélèvement trouvé.</p>
+                    <a href="{{ url_for('agent.add_prelevement') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Ajouter un prélèvement
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Activer les tooltips Bootstrap
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+</script>
+{% endblock %}

@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}Paramètres système - GabonMétéo+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-gear-fill"></i> Paramètres système</h1>
+    <a href="{{ url_for('superadmin.dashboard') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Retour au tableau de bord
+    </a>
+</div>
+
+<div class="alert alert-info">
+    <i class="bi bi-info-circle-fill"></i> Les modifications apportées ici affecteront le fonctionnement global de l'application.
+</div>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-sliders"></i> Configuration du système</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('superadmin.system_settings') }}">
+            <div class="row">
+                <!-- Paramètres généraux -->
+                <div class="col-md-6">
+                    <h6 class="border-bottom pb-2 mb-3">Paramètres généraux</h6>
+                    
+                    <div class="mb-3">
+                        <label for="site_title" class="form-label">Titre du site</label>
+                        <input type="text" class="form-control" id="site_title" name="site_title" value="{{ settings.site_title }}" required>
+                        <small class="form-text text-muted">Titre affiché dans la barre de navigation</small>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="maintenance_mode" name="maintenance_mode" {% if settings.maintenance_mode %}checked{% endif %}>
+                        <label class="form-check-label" for="maintenance_mode">Mode maintenance</label>
+                        <small class="d-block form-text text-muted">Lorsqu'activé, seuls les administrateurs peuvent accéder au site</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="default_theme" class="form-label">Thème par défaut</label>
+                        <select class="form-select" id="default_theme" name="default_theme">
+                            <option value="light" {% if settings.default_theme == 'light' %}selected{% endif %}>Clair</option>
+                            <option value="dark" {% if settings.default_theme == 'dark' %}selected{% endif %}>Sombre</option>
+                        </select>
+                        <small class="form-text text-muted">Thème appliqué par défaut aux nouveaux utilisateurs</small>
+                    </div>
+                </div>
+                
+                <!-- Paramètres techniques -->
+                <div class="col-md-6">
+                    <h6 class="border-bottom pb-2 mb-3">Paramètres techniques</h6>
+                    
+                    <div class="mb-3">
+                        <label for="maximum_upload_size" class="form-label">Taille maximale d'upload (MB)</label>
+                        <input type="number" class="form-control" id="maximum_upload_size" name="maximum_upload_size" value="{{ settings.maximum_upload_size }}" min="1" max="100" required>
+                        <small class="form-text text-muted">Taille maximale des fichiers téléchargés (en mégaoctets)</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="allowed_file_types" class="form-label">Types de fichiers autorisés</label>
+                        <input type="text" class="form-control" id="allowed_file_types" name="allowed_file_types" value="{{ settings.allowed_file_types }}" required>
+                        <small class="form-text text-muted">Extensions de fichiers séparées par des virgules (ex: .csv,.xlsx,.xls)</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="refresh_interval" class="form-label">Intervalle de rafraîchissement (minutes)</label>
+                        <input type="number" class="form-control" id="refresh_interval" name="refresh_interval" value="{{ settings.refresh_interval }}" min="1" max="1440" required>
+                        <small class="form-text text-muted">Intervalle de rafraîchissement des données de prévisions</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-3">
+                <!-- Paramètres de la carte -->
+                <div class="col-md-6">
+                    <h6 class="border-bottom pb-2 mb-3">Paramètres de la carte</h6>
+                    
+                    <div class="mb-3">
+                        <label for="map_center_lat" class="form-label">Latitude centrale par défaut</label>
+                        <input type="number" step="0.0001" class="form-control" id="map_center_lat" name="map_center_lat" value="{{ settings.map_center_lat }}" required>
+                        <small class="form-text text-muted">Latitude du centre de la carte (ex: 0.4162 pour Libreville)</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="map_center_lon" class="form-label">Longitude centrale par défaut</label>
+                        <input type="number" step="0.0001" class="form-control" id="map_center_lon" name="map_center_lon" value="{{ settings.map_center_lon }}" required>
+                        <small class="form-text text-muted">Longitude du centre de la carte (ex: 9.4673 pour Libreville)</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="map_default_zoom" class="form-label">Niveau de zoom par défaut</label>
+                        <input type="number" class="form-control" id="map_default_zoom" name="map_default_zoom" value="{{ settings.map_default_zoom }}" min="1" max="20" required>
+                        <small class="form-text text-muted">Niveau de zoom initial de la carte (1-20)</small>
+                    </div>
+                </div>
+                
+                <!-- Paramètres des données -->
+                <div class="col-md-6">
+                    <h6 class="border-bottom pb-2 mb-3">Paramètres des données</h6>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="automatic_validation" name="automatic_validation" {% if settings.automatic_validation %}checked{% endif %}>
+                        <label class="form-check-label" for="automatic_validation">Validation automatique des prélèvements</label>
+                        <small class="d-block form-text text-muted">Lorsqu'activé, les prélèvements sont validés automatiquement sans intervention d'un administrateur</small>
+                    </div>
+                    
+                    <div class="alert alert-warning mt-3">
+                        <i class="bi bi-exclamation-triangle-fill"></i> La validation automatique peut réduire la qualité des données. Utilisez cette option avec précaution.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                <button type="reset" class="btn btn-secondary me-md-2">
+                    <i class="bi bi-arrow-counterclockwise"></i> Réinitialiser
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> Enregistrer les paramètres
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Redémarrer l'application -->
+<div class="card mt-4">
+    <div class="card-header bg-danger text-white">
+        <h5 class="mb-0"><i class="bi bi-arrow-repeat"></i> Maintenance du système</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Redémarrage de l'application</h6>
+                <p>Effectuez un redémarrage de l'application pour appliquer certains changements de configuration. Cette action déconnectera temporairement tous les utilisateurs.</p>
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#restartModal">
+                    <i class="bi bi-arrow-repeat"></i> Redémarrer l'application
+                </button>
+            </div>
+            <div class="col-md-6">
+                <h6>Vider le cache</h6>
+                <p>Supprimez les données mises en cache pour forcer le chargement de données fraîches depuis la base de données.</p>
+                <button type="button" class="btn btn-warning">
+                    <i class="bi bi-trash"></i> Vider le cache
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmation de redémarrage -->
+<div class="modal fade" id="restartModal" tabindex="-1" aria-labelledby="restartModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="restartModalLabel">Confirmation de redémarrage</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Attention!</strong> Le redémarrage de l'application déconnectera tous les utilisateurs et interrompra temporairement le service.</p>
+                <p>Êtes-vous sûr de vouloir procéder au redémarrage?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-danger">
+                    <i class="bi bi-arrow-repeat"></i> Confirmer le redémarrage
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

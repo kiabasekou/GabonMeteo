@@ -12,87 +12,199 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
-        <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.index') }}">
-                <i class="bi bi-cloud-sun me-2"></i>
-                <span>GabonMétéo+</span>
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.index') }}">
-                            <i class="bi bi-house-door"></i> Accueil
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.forecasts') }}">
-                            <i class="bi bi-calendar-week"></i> Prévisions
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.historical') }}">
-                            <i class="bi bi-graph-up"></i> Historique
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.agriculture') }}">
-                            <i class="bi bi-tree"></i> Agriculture
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.alerts') }}">
-                            <i class="bi bi-exclamation-triangle"></i> Alertes
-                        </a>
-                    </li>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+    <div class="container">
+        <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.index') }}">
+            <i class="bi bi-cloud-sun me-2"></i>
+            <span>GabonMétéo+</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('main.index') }}">
+                        <i class="bi bi-house-door"></i> Accueil
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('main.forecasts') }}">
+                        <i class="bi bi-calendar-week"></i> Prévisions
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('main.historical') }}">
+                        <i class="bi bi-graph-up"></i> Historique
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('main.agriculture') }}">
+                        <i class="bi bi-tree"></i> Agriculture
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('main.alerts') }}">
+                        <i class="bi bi-exclamation-triangle"></i> Alertes
+                    </a>
+                </li>
+                <!-- 🎯 Dropdown Modules Sectoriels -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="modulesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-grid-3x3-gap"></i> Modules
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="modulesDropdown">
+                        <li><a class="dropdown-item" href="{{ url_for('main.aviation') }}">
+                            <i class="bi bi-airplane"></i> Aviation
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('main.maritime') }}">
+                            <i class="bi bi-water"></i> Maritime
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#" style="opacity: 0.5;">
+                            <i class="bi bi-camera"></i> Tourisme <small>(bientôt)</small>
+                        </a></li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('main.statistics') }}">
+                        <i class="bi bi-bar-chart"></i> Statistiques
+                    </a>
+                </li>
+            </ul>
+            
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <button id="theme-toggle" class="btn nav-link" title="Changer le thème">
+                        <i id="theme-icon" class="bi bi-moon"></i>
+                    </button>
+                </li>
                 
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.statistics') }}">
-                         <i class="bi bi-bar-chart"></i> Statistiques
-                         </a>
-                    </li>
-                </ul>
-                
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <button id="theme-toggle" class="btn nav-link" title="Changer le thème">
-                            <i id="theme-icon" class="bi bi-moon"></i>
-                        </button>
-                    </li>
+                {% if current_user.is_authenticated %}
+                    {% set is_agent = current_user.agent|default(false) %}
                     
-                    {% if current_user.is_authenticated %}
-                    {% if current_user.role == 'admin' %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.dashboard') }}">
-                            <i class="bi bi-speedometer2"></i> Tableau de bord
-                        </a>
-                    </li>
-                    {% endif %}
+                    {% if is_agent %}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-person-circle"></i> {{ current_user.username }}
+                        <a class="nav-link dropdown-toggle" href="#" id="agentDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-clipboard-data"></i> Espace Agent
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-person"></i> Profil</a></li>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="agentDropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('agent.dashboard') }}">
+                                <i class="bi bi-speedometer2"></i> Tableau de bord
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('agent.prelevements') }}">
+                                <i class="bi bi-list-check"></i> Mes prélèvements
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('agent.add_prelevement') }}">
+                                <i class="bi bi-plus-circle"></i> Nouveau prélèvement
+                            </a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Déconnexion</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('agent.profile') }}">
+                                <i class="bi bi-person"></i> Mon profil
+                            </a></li>
                         </ul>
                     </li>
-                    {% else %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('auth.login') }}"><i class="bi bi-box-arrow-in-right"></i> Connexion</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('auth.register') }}"><i class="bi bi-person-plus"></i> Inscription</a>
+                    {% endif %}
+                    
+                    {% if current_user.role == 'superadmin' %}
+                    <!-- Menu Super Admin -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="superadminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-shield-lock-fill"></i> Super Admin
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="superadminDropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('superadmin.dashboard') }}">
+                                <i class="bi bi-speedometer2"></i> Tableau de bord
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('superadmin.system_settings') }}">
+                                <i class="bi bi-gear-fill"></i> Paramètres système
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('superadmin.user_roles') }}">
+                                <i class="bi bi-people-fill"></i> Gestion des rôles
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('superadmin.import_data') }}">
+                                <i class="bi bi-upload"></i> Import de données
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('superadmin.system_backup') }}">
+                                <i class="bi bi-archive-fill"></i> Sauvegarde système
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('superadmin.system_logs') }}">
+                                <i class="bi bi-journal-text"></i> Journaux système
+                            </a></li>
+                        </ul>
                     </li>
                     {% endif %}
-                </ul>
-            </div>
+                    
+                    {% if current_user.role == 'admin' %}
+                    <!-- Menu Admin -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-gear-fill"></i> Administration
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminDropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('main.dashboard') }}">
+                                <i class="bi bi-speedometer2"></i> Tableau de bord
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_agent.index') }}">
+                                <i class="bi bi-people"></i> Gestion des agents
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_agent.prelevements') }}">
+                                <i class="bi bi-clipboard-check"></i> Validation des prélèvements
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_agent.directions') }}">
+                                <i class="bi bi-diagram-3"></i> Directions & Services
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.manage_users') }}">
+                                <i class="bi bi-person-gear"></i> Gestion des utilisateurs
+                            </a></li>
+                        </ul>
+                    </li>
+                    {% endif %}
+                
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle"></i> {{ current_user.username }}
+                            {% if current_user.role == 'superadmin' %}
+                            <span class="badge bg-danger">SA</span>
+                            {% elif current_user.role == 'admin' %}
+                            <span class="badge bg-warning text-dark">A</span>
+                            {% endif %}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            {% if is_agent %}
+                            <li><a class="dropdown-item" href="{{ url_for('agent.profile') }}">
+                                <i class="bi bi-person"></i> Mon profil
+                            </a></li>
+                            {% else %}
+                            <li><a class="dropdown-item" href="#">
+                                <i class="bi bi-person"></i> Profil
+                            </a></li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">
+                                <i class="bi bi-box-arrow-right"></i> Déconnexion
+                            </a></li>
+                        </ul>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('auth.login') }}">
+                            <i class="bi bi-box-arrow-in-right"></i> Connexion
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('auth.register') }}">
+                            <i class="bi bi-person-plus"></i> Inscription
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
         </div>
-    </nav>
+    </div>
+</nav>
 
     <div class="container mt-4 mb-5">
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -124,6 +236,9 @@
                         <a href="{{ url_for('main.historical') }}" class="btn btn-link text-muted">Historique</a>
                         <a href="{{ url_for('main.agriculture') }}" class="btn btn-link text-muted">Agriculture</a>
                         <a href="{{ url_for('main.alerts') }}" class="btn btn-link text-muted">Alertes</a>
+                        {% if current_user.is_authenticated and current_user.agent %}
+                        <a href="{{ url_for('agent.dashboard') }}" class="btn btn-link text-muted">Espace Agent</a>
+                        {% endif %}
                     </div>
                 </div>
             </div>

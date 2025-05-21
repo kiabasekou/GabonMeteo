@@ -105,7 +105,7 @@ def alerts():
 @login_required
 def dashboard():
     # Vérifier si l'utilisateur est un administrateur
-    if current_user.role != 'admin':
+    if current_user.role != 'admin' and current_user.role != 'superadmin':
         flash('Accès non autorisé. Vous devez être administrateur pour accéder à cette page.', 'danger')
         return redirect(url_for('main.index'))
     
@@ -130,11 +130,21 @@ def dashboard():
     # Utilisateurs
     users = User.query.all()
     
+    # Calcul de la température moyenne (avec vérification)
+    avg_temp = None
+    temp_data = WeatherData.query.order_by(WeatherData.timestamp.desc()).limit(50).all()
+    if temp_data:
+        temperatures = [data.temperature for data in temp_data if data.temperature is not None]
+        if temperatures:
+            avg_temp = sum(temperatures) / len(temperatures)
+    
     return render_template('dashboard/index.html', 
                           stats=stats,
                           latest_data=latest_data,
                           stations=stations,
-                          users=users)
+                          users=users,
+                          avg_temp=avg_temp)
+
 
 @main_bp.route('/dashboard/station/<int:id>')
 @login_required
@@ -353,3 +363,11 @@ def statistics():
 def api_docs():
     """Page de documentation de l'API"""
     return render_template('api-docs.html')
+
+@main_bp.route('/aviation')
+def aviation():
+    return render_template('aviation.html')
+
+@main_bp.route('/maritime')
+def maritime():
+    return render_template('maritime.html')

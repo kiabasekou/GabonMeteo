@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Gestion des agents - GabonMétéo+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Gestion des agents DGM</h1>
+    <div>
+        <a href="{{ url_for('admin_agent.directions') }}" class="btn btn-info me-2">
+            <i class="bi bi-diagram-3"></i> Directions & Services
+        </a>
+        <a href="{{ url_for('admin_agent.add_agent') }}" class="btn btn-primary">
+            <i class="bi bi-person-plus"></i> Ajouter un agent
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Liste des agents</h5>
+            </div>
+            <div class="card-body">
+                {% if agents %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Matricule</th>
+                                <th>Nom</th>
+                                <th>Email</th>
+                                <th>Fonction</th>
+                                <th>Service</th>
+                                <th>Station</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for agent in agents %}
+                            <tr>
+                                <td>{{ agent.matricule }}</td>
+                                <td>{{ agent.user.username }}</td>
+                                <td>{{ agent.user.email }}</td>
+                                <td>{{ agent.fonction }}</td>
+                                <td>{{ agent.service.name }}</td>
+                                <td>
+                                    {% if agent.station %}
+                                    {{ agent.station.name }}
+                                    {% else %}
+                                    <span class="text-muted">Non affecté</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('admin_agent.edit_agent', id=agent.id) }}" class="btn btn-sm btn-warning">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteAgentModal{{ agent.id }}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                    
+                                    <!-- Modal de confirmation de suppression -->
+                                    <div class="modal fade" id="deleteAgentModal{{ agent.id }}" tabindex="-1" aria-labelledby="deleteAgentModalLabel{{ agent.id }}" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header bg-danger text-white">
+                                                    <h5 class="modal-title" id="deleteAgentModalLabel{{ agent.id }}">Confirmation de suppression</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p>Êtes-vous sûr de vouloir supprimer l'agent {{ agent.user.username }} (matricule: {{ agent.matricule }}) ?</p>
+                                                    <p class="text-danger"><strong>Cette action est irréversible.</strong></p>
+                                                    <p>Note: Si cet agent a des prélèvements associés, la suppression sera impossible.</p>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                    <form action="{{ url_for('admin_agent.delete_agent', id=agent.id) }}" method="POST">
+                                                        <button type="submit" class="btn btn-danger">Supprimer</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                <nav class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if pagination.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin_agent.index', page=pagination.prev_num) }}">Précédent</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">Précédent</span>
+                        </li>
+                        {% endif %}
+                        
+                        {% for page in pagination.iter_pages() %}
+                            {% if page %}
+                                {% if page != pagination.page %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('admin_agent.index', page=page) }}">{{ page }}</a>
+                                </li>
+                                {% else %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page }}</span>
+                                </li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin_agent.index', page=pagination.next_num) }}">Suivant</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">Suivant</span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% else %}
+                <div class="text-center">
+                    <p>Aucun agent enregistré.</p>
+                    <a href="{{ url_for('admin_agent.add_agent') }}" class="btn btn-primary">
+                        <i class="bi bi-person-plus"></i> Ajouter un agent
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

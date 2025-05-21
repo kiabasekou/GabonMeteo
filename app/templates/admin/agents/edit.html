@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Modifier un agent - GabonMétéo+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Modifier l'agent: {{ agent.user.username }}</h1>
+    <a href="{{ url_for('admin_agent.index') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Retour à la liste
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">Formulaire de modification d'agent</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin_agent.edit_agent', id=agent.id) }}">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="border-bottom pb-2 mb-3">Informations personnelles</h6>
+                            
+                            <div class="mb-3">
+                                <label for="matricule" class="form-label">Matricule solde *</label>
+                                <input type="text" class="form-control" id="matricule" name="matricule" value="{{ agent.matricule }}" required>
+                                <small class="form-text text-muted">Numéro d'identification unique de l'agent</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="user_id" class="form-label">Utilisateur *</label>
+                                <select class="form-select" id="user_id" name="user_id" required>
+                                    {% for user in users %}
+                                    <option value="{{ user.id }}" {% if user.id == agent.user_id %}selected{% endif %}>
+                                        {{ user.username }} ({{ user.email }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <small class="form-text text-muted">Compte utilisateur associé à cet agent</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="date_naissance" class="form-label">Date de naissance *</label>
+                                <input type="date" class="form-control" id="date_naissance" name="date_naissance" value="{{ date_naissance_str }}" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="date_embauche" class="form-label">Date d'embauche</label>
+                                <input type="date" class="form-control" id="date_embauche" name="date_embauche" value="{{ date_embauche_str }}">
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6 class="border-bottom pb-2 mb-3">Affectation professionnelle</h6>
+                            
+                            <div class="mb-3">
+                                <label for="fonction" class="form-label">Fonction *</label>
+                                <input type="text" class="form-control" id="fonction" name="fonction" value="{{ agent.fonction }}" required>
+                                <small class="form-text text-muted">Poste ou fonction occupé par l'agent</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="service_id" class="form-label">Service *</label>
+                                <select class="form-select" id="service_id" name="service_id" required>
+                                    {% for service in services %}
+                                    <option value="{{ service.id }}" {% if service.id == agent.service_id %}selected{% endif %}>
+                                        {{ service.name }} ({{ service.direction.name }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="station_id" class="form-label">Station d'affectation</label>
+                                <select class="form-select" id="station_id" name="station_id">
+                                    <option value="">Aucune station</option>
+                                    {% for station in stations %}
+                                    <option value="{{ station.id }}" {% if agent.station_id == station.id %}selected{% endif %}>
+                                        {{ station.name }} ({{ station.region }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <small class="form-text text-muted">Station météorologique à laquelle l'agent est affecté</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <a href="{{ url_for('admin_agent.index') }}" class="btn btn-secondary me-md-2">
+                            <i class="bi bi-x-circle"></i> Annuler
+                        </a>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-save"></i> Enregistrer les modifications
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Statistiques</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 text-center">
+                        <h5>Prélèvements</h5>
+                        <h2>{{ agent.prelevements.count() }}</h2>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <h5>Validés</h5>
+                        <h2>{{ agent.prelevements.filter_by(validated=true).count() }}</h2>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <h5>En attente</h5>
+                        <h2>{{ agent.prelevements.filter_by(validated=false).count() }}</h2>
+                    </div>
+                </div>
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('admin_agent.prelevements') }}?agent_id={{ agent.id }}" class="btn btn-info text-white">
+                        <i class="bi bi-list-check"></i> Voir les prélèvements
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Informations du compte</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <th>Nom d'utilisateur:</th>
+                        <td>{{ agent.user.username }}</td>
+                    </tr>
+                    <tr>
+                        <th>Email:</th>
+                        <td>{{ agent.user.email }}</td>
+                    </tr>
+                    <tr>
+                        <th>Rôle:</th>
+                        <td>
+                            {% if agent.user.role == 'admin' %}
+                            <span class="badge bg-danger">Administrateur</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Utilisateur</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('main.manage_users') }}" class="btn btn-info text-white">
+                        <i class="bi bi-gear"></i> Gérer les utilisateurs
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

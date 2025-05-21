@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+
+{% block title %}Gestion des prélèvements - GabonMétéo+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Gestion des prélèvements</h1>
+    <a href="{{ url_for('admin_agent.index') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Retour aux agents
+    </a>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Filtres de recherche</h5>
+            </div>
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('admin_agent.prelevements') }}">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="station_id" class="form-label">Station</label>
+                            <select class="form-select" id="station_id" name="station_id">
+                                <option value="">Toutes les stations</option>
+                                {% for station in stations %}
+                                <option value="{{ station.id }}" {% if current_filters.station_id == station.id %}selected{% endif %}>
+                                    {{ station.name }} ({{ station.region }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="agent_id" class="form-label">Agent</label>
+                            <select class="form-select" id="agent_id" name="agent_id">
+                                <option value="">Tous les agents</option>
+                                {% for agent in agents %}
+                                <option value="{{ agent.id }}" {% if current_filters.agent_id == agent.id %}selected{% endif %}>
+                                    {{ agent.user.username }} ({{ agent.matricule }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="status" class="form-label">Statut</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">Tous les statuts</option>
+                                <option value="pending" {% if current_filters.status == 'pending' %}selected{% endif %}>En attente</option>
+                                <option value="validated" {% if current_filters.status == 'validated' %}selected{% endif %}>Validé</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="date_from" class="form-label">Date de début</label>
+                            <input type="date" class="form-control" id="date_from" name="date_from" value="{{ current_filters.date_from }}">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="date_to" class="form-label">Date de fin</label>
+                            <input type="date" class="form-control" id="date_to" name="date_to" value="{{ current_filters.date_to }}">
+                        </div>
+                        <div class="col-md-9 mb-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="bi bi-filter"></i> Filtrer
+                            </button>
+                            <a href="{{ url_for('admin_agent.prelevements') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Réinitialiser
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Liste des prélèvements</h5>
+            </div>
+            <div class="card-body">
+                {% if prelevements %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Date</th>
+                                <th>Agent</th>
+                                <th>Station</th>
+                                <th>Température</th>
+                                <th>Précipitations</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for prelevement in prelevements %}
+                            <tr>
+                                <td>{{ prelevement.id }}</td>
+                                <td>{{ prelevement.date_prelevement.strftime('%d/%m/%Y %H:%M') }}</td>
+                                <td>{{ prelevement.agent.user.username }}</td>
+                                <td>{{ prelevement.station.name }}</td>
+                                <td>{{ prelevement.temperature|round(1) }}°C</td>
+                                <td>{{ prelevement.precipitation|round(1) if prelevement.precipitation != None else "N/A" }} mm</td>
+                                <td>
+                                    {% if prelevement.validated %}
+                                    <span class="badge bg-success">Validé</span>
+                                    {% else %}
+                                    <span class="badge bg-warning text-dark">En attente</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('admin_agent.view_prelevement', id=prelevement.id) }}" class="btn btn-sm btn-info">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    
+                                    {% if not prelevement.validated %}
+                                    <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#validatePrelevementModal{{ prelevement.id }}">
+                                        <i class="bi bi-check-circle"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#rejectPrelevementModal{{ prelevement.id }}">
+                                        <i class="bi bi-x-circle"></i>
+                                    </button>
+                                    
+                                    <!-- Modal de validation -->
+                                    <div class="modal fade" id="validatePrelevementModal{{ prelevement.id }}" tabindex="-1" aria-labelledby="validatePrelevementModalLabel{{ prelevement.id }}" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header bg-success text-white">
+                                                    <h5 class="modal-title" id="validatePrelevementModalLabel{{ prelevement.id }}">Valider le prélèvement #{{ prelevement.id }}</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p>Voulez-vous valider ce prélèvement et l'intégrer aux données météorologiques officielles?</p>
+                                                    <div class="alert alert-info">
+                                                        <strong>Information:</strong> Une fois validé, ce prélèvement sera converti en donnée météorologique et ne pourra plus être modifié.
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                    <form action="{{ url_for('admin_agent.validate_prelevement', id=prelevement.id) }}" method="POST">
+                                                        <button type="submit" class="btn btn-success">Valider</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Modal de rejet -->
+                                    <div class="modal fade" id="rejectPrelevementModal{{ prelevement.id }}" tabindex="-1" aria-labelledby="rejectPrelevementModalLabel{{ prelevement.id }}" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header bg-danger text-white">
+                                                    <h5 class="modal-title" id="rejectPrelevementModalLabel{{ prelevement.id }}">Rejeter le prélèvement #{{ prelevement.id }}</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <form action="{{ url_for('admin_agent.reject_prelevement', id=prelevement.id) }}" method="POST">
+                                                    <div class="modal-body">
+                                                        <p>Veuillez indiquer la raison du rejet de ce prélèvement:</p>
+                                                        <div class="mb-3">
+                                                            <label for="reject_reason" class="form-label">Raison du rejet *</label>
+                                                            <textarea class="form-control" id="reject_reason" name="reject_reason" rows="3" required></textarea>
+                                                            <small class="form-text text-muted">Cette information sera visible par l'agent qui a effectué le prélèvement.</small>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                        <button type="submit" class="btn btn-danger">Rejeter</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                <nav class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if pagination.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin_agent.prelevements', page=pagination.prev_num, **current_filters) }}">Précédent</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">Précédent</span>
+                        </li>
+                        {% endif %}
+                        
+                        {% for page in pagination.iter_pages() %}
+                            {% if page %}
+                                {% if page != pagination.page %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('admin_agent.prelevements', page=page, **current_filters) }}">{{ page }}</a>
+                                </li>
+                                {% else %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page }}</span>
+                                </li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin_agent.prelevements', page=pagination.next_num, **current_filters) }}">Suivant</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">Suivant</span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% else %}
+                <div class="text-center">
+                    <p>Aucun prélèvement ne correspond aux critères de recherche.</p>
+                    <a href="{{ url_for('admin_agent.prelevements') }}" class="btn btn-primary">
+                        <i class="bi bi-arrow-repeat"></i> Réinitialiser les filtres
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Statistiques</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-6">
+                        <h5>Total</h5>
+                        <h2>{{ pagination.total }}</h2>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>En attente</h5>
+                        <h2>{{ pending_count if pending_count is defined else 'N/A' }}</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Actions rapides</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <a href="{{ url_for('admin_agent.prelevements') }}?status=pending" class="btn btn-warning w-100 mb-2">
+                            <i class="bi bi-hourglass"></i> Voir les prélèvements en attente
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="{{ url_for('admin_agent.prelevements') }}?status=validated" class="btn btn-success w-100 mb-2">
+                            <i class="bi bi-check-circle"></i> Voir les prélèvements validés
+                        </a>
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-12">
+                        <div class="alert alert-info mb-0">
+                            <i class="bi bi-info-circle"></i> Les prélèvements validés sont automatiquement convertis en données météorologiques dans le système.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}Tableau de bord agent - GabonMétéo+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Tableau de bord agent</h1>
+    <div>
+        <a href="{{ url_for('agent.add_prelevement') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nouveau prélèvement
+        </a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card border-primary h-100">
+            <div class="card-body text-center">
+                <h1 class="display-4">{{ total_prelevements }}</h1>
+                <p class="lead">Total des prélèvements</p>
+                <a href="{{ url_for('agent.prelevements') }}" class="btn btn-primary">
+                    <i class="bi bi-list"></i> Voir tous
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-success h-100">
+            <div class="card-body text-center">
+                <h1 class="display-4">{{ validated_prelevements }}</h1>
+                <p class="lead">Prélèvements validés</p>
+                <a href="{{ url_for('agent.prelevements') }}?status=validated" class="btn btn-success">
+                    <i class="bi bi-check-circle"></i> Voir validés
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-warning h-100">
+            <div class="card-body text-center">
+                <h1 class="display-4">{{ pending_prelevements }}</h1>
+                <p class="lead">Prélèvements en attente</p>
+                <a href="{{ url_for('agent.prelevements') }}?status=pending" class="btn btn-warning text-white">
+                    <i class="bi bi-hourglass"></i> Voir en attente
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if station_data %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Ma station d'affectation: {{ station_data.station.name }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Informations de la station</h6>
+                        <table class="table table-borderless">
+                            <tr>
+                                <th>Nom:</th>
+                                <td>{{ station_data.station.name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Région:</th>
+                                <td>{{ station_data.station.region }}</td>
+                            </tr>
+                            <tr>
+                                <th>Latitude:</th>
+                                <td>{{ station_data.station.latitude }}</td>
+                            </tr>
+                            <tr>
+                                <th>Longitude:</th>
+                                <td>{{ station_data.station.longitude }}</td>
+                            </tr>
+                            <tr>
+                                <th>Altitude:</th>
+                                <td>{{ station_data.station.altitude }} m</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Dernières données validées</h6>
+                        {% if station_data.latest_data %}
+                        <table class="table table-borderless">
+                            <tr>
+                                <th>Date:</th>
+                                <td>{{ station_data.latest_data.timestamp.strftime('%d/%m/%Y %H:%M') }}</td>
+                            </tr>
+                            <tr>
+                                <th>Température:</th>
+                                <td>{{ station_data.latest_data.temperature|round(1) }}°C</td>
+                            </tr>
+                            <tr>
+                                <th>Humidité:</th>
+                                <td>{{ station_data.latest_data.humidity|round(1) }}%</td>
+                            </tr>
+                            <tr>
+                                <th>Pression:</th>
+                                <td>{{ station_data.latest_data.pressure|round(1) }} hPa</td>
+                            </tr>
+                            <tr>
+                                <th>Précipitations:</th>
+                                <td>{{ station_data.latest_data.precipitation|round(1) }} mm</td>
+                            </tr>
+                        </table>
+                        {% else %}
+                        <p class="text-muted">Aucune donnée disponible</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Prélèvements récents</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_prelevements %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Station</th>
+                                <th>Température</th>
+                                <th>Précipitations</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for prelevement in recent_prelevements %}
+                            <tr>
+                                <td>{{ prelevement.date_prelevement.strftime('%d/%m/%Y %H:%M') }}</td>
+                                <td>{{ prelevement.station.name }}</td>
+                                <td>{{ prelevement.temperature|round(1) }}°C</td>
+                                <td>{{ prelevement.precipitation|round(1) }} mm</td>
+                                <td>
+                                    {% if prelevement.validated %}
+                                    <span class="badge bg-success">Validé</span>
+                                    {% else %}
+                                    <span class="badge bg-warning text-dark">En attente</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if not prelevement.validated %}
+                                    <a href="{{ url_for('agent.edit_prelevement', id=prelevement.id) }}" class="btn btn-sm btn-warning">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deletePrelevementModal{{ prelevement.id }}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                    
+                                    <!-- Modal de confirmation de suppression -->
+                                    <div class="modal fade" id="deletePrelevementModal{{ prelevement.id }}" tabindex="-1" aria-labelledby="deletePrelevementModalLabel{{ prelevement.id }}" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header bg-danger text-white">
+                                                    <h5 class="modal-title" id="deletePrelevementModalLabel{{ prelevement.id }}">Confirmation de suppression</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p>Êtes-vous sûr de vouloir supprimer ce prélèvement du {{ prelevement.date_prelevement.strftime('%d/%m/%Y') }} ?</p>
+                                                    <p class="text-danger"><strong>Cette action est irréversible.</strong></p>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                    <form action="{{ url_for('agent.delete_prelevement', id=prelevement.id) }}" method="POST">
+                                                        <button type="submit" class="btn btn-danger">Supprimer</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% else %}
+                                    <button type="button" class="btn btn-sm btn-info" data-bs-toggle="tooltip" title="Prélèvement validé">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('agent.prelevements') }}" class="btn btn-primary">
+                        Voir tous les prélèvements
+                    </a>
+                </div>
+                {% else %}
+                <p class="text-center">Aucun prélèvement récent.</p>
+                <div class="text-center">
+                    <a href="{{ url_for('agent.add_prelevement') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Créer votre premier prélèvement
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Activer les tooltips Bootstrap
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+</script>
+{% endblock %}

@@ -1,265 +1,276 @@
-# GabonMétéo+
+# GabonMétéo+ 🌤️
 
-Application météorologique intégrée pour la Direction Générale de Météorologie du Gabon.
+**Plateforme météorologique intégrée pour la Direction Générale de Météorologie du Gabon**
 
-![Logo GabonMétéo+](app/static/img/logo.png)
+![License](https://img.shields.io/badge/license-Proprietary-red)
+![Python](https://img.shields.io/badge/python-3.9+-blue)
+![Flask](https://img.shields.io/badge/flask-2.3.3-green)
+![Status](https://img.shields.io/badge/status-Active%20Development-orange)
 
-## Description
+## 📋 Table des matières
 
-GabonMétéo+ est une plateforme web moderne et complète qui centralise, analyse et présente les données météorologiques du Gabon. Développée pour la Direction Générale de Météorologie du Gabon, cette application offre une interface intuitive et des fonctionnalités avancées pour :
+- [À propos](#-à-propos)
+- [Fonctionnalités](#-fonctionnalités)
+- [Architecture](#-architecture)
+- [Installation](#-installation)
+- [Configuration](#-configuration)
+- [Utilisation](#-utilisation)
+- [Gestion des utilisateurs](#-gestion-des-utilisateurs)
+- [API](#-api)
+- [Contribution](#-contribution)
+- [Auteur](#-auteur)
 
-- Visualiser les conditions météorologiques actuelles
-- Consulter les prévisions à court terme
-- Analyser l'historique des données météorologiques
-- Accéder à des informations spécifiques au secteur agricole
-- Recevoir des alertes en cas de phénomènes météorologiques importants
-- Analyser les statistiques et tendances climatiques
-- Accéder aux données via une API RESTful
+## 🎯 À propos
 
-## Fonctionnalités
+GabonMétéo+ est une application web moderne développée spécifiquement pour la Direction Générale de Météorologie du Gabon. Elle offre une plateforme complète pour la gestion des données météorologiques, des prévisions, et des services sectoriels.
 
-### 1. Tableau de bord principal
-- Vue d'ensemble des conditions météorologiques actuelles
-- Carte interactive des stations météorologiques
-- Résumé des alertes et prévisions importantes
+### Objectifs principaux
 
-### 2. Prévisions météorologiques
-- Prévisions sur 3 jours pour chaque station
-- Visualisation cartographique des prévisions
-- Informations détaillées (température, précipitations, humidité, vent)
+- Centralisation des données météorologiques du Gabon
+- Interface moderne et intuitive pour les agents de la DGM
+- Système de validation des prélèvements météorologiques
+- Services dédiés aux secteurs (agriculture, aviation, maritime)
+- Gestion hiérarchique des utilisateurs et des droits d'accès
 
-### 3. Données historiques
-- Consultation et filtrage des données historiques par station
-- Graphiques interactifs d'évolution des paramètres météorologiques
-- Export des données en format CSV
+## ✨ Fonctionnalités
 
-### 4. Services agricoles
-- Calendrier agricole adapté aux conditions climatiques gabonaises
-- Recommandations spécifiques par culture et par région
-- Alertes pour les périodes de plantation et de récolte
+### 🌡️ Gestion des données météorologiques
+- **Prélèvements en temps réel** : Interface de saisie pour les agents DGM
+- **Validation des données** : Workflow de validation à plusieurs niveaux
+- **Historique complet** : Archivage et consultation des données historiques
+- **Visualisations graphiques** : Graphiques interactifs avec Chart.js
 
-### 5. Système d'alertes
-- Visualisation des alertes météorologiques en cours
-- Carte des zones concernées par les alertes
-- Historique des alertes précédentes
+### 👥 Gestion des utilisateurs
+- **Système de rôles** : SuperAdmin, Admin, Agent DGM, Utilisateur
+- **Authentification sécurisée** : Système de connexion avec gestion des sessions
+- **Profils personnalisés** : Profils spécifiques selon le type d'utilisateur
 
-### 6. Statistiques et analyses
-- Tendances climatiques à long terme
-- Analyse comparative entre stations et régions
-- Visualisations avancées des données météorologiques
+### 🏢 Gestion organisationnelle
+- **Directions et services** : Gestion de la hiérarchie administrative
+- **Affectation des agents** : Attribution des agents aux stations météorologiques
+- **Matricules et fonctions** : Gestion complète des données RH
 
-### 7. API RESTful
-- Accès programmatique aux données météorologiques
-- Récupération des informations sur les stations
-- Données actuelles, historiques et prévisions
-- Statistiques climatiques
+### 🌾 Modules sectoriels
+- **Agriculture** : Conseils agricoles basés sur les données météo
+- **Aviation** : Informations météorologiques pour l'aviation
+- **Maritime** : Données météo spécifiques aux activités maritimes
+- **Alertes** : Système d'alertes pour les phénomènes critiques
 
-## Architecture technique
+### ⚙️ Administration système
+- **Tableau de bord SuperAdmin** : Vue d'ensemble complète du système
+- **Configuration système** : Paramétrage global de l'application
+- **Journaux d'activité** : Suivi des actions système
+- **Sauvegarde et restauration** : Outils de maintenance
 
-GabonMétéo+ est développé avec les technologies suivantes :
+## 🏗️ Architecture
 
+### Stack technique
 - **Backend** : Flask (Python 3.9+)
+- **Frontend** : Bootstrap 5.3, JavaScript ES6
 - **Base de données** : SQLite (développement) / PostgreSQL (production)
-- **Frontend** : HTML5, CSS3, JavaScript, Bootstrap 5
-- **Visualisation** : Chart.js, Leaflet.js
+- **ORM** : SQLAlchemy
 - **Authentification** : Flask-Login
+- **Cartes** : Leaflet.js
+- **Graphiques** : Chart.js
 
-## Installation
+### Structure du projet
+```
+GabonMeteo/
+├── app/
+│   ├── models/           # Modèles de données
+│   │   ├── user.py      # Modèle utilisateur
+│   │   ├── agent.py     # Modèles agents DGM
+│   │   └── weather_data.py # Modèles données météo
+│   ├── routes/          # Routes de l'application
+│   │   ├── main.py      # Routes principales
+│   │   ├── auth.py      # Authentification
+│   │   ├── agent.py     # Routes agents DGM
+│   │   ├── admin_agent.py # Administration agents
+│   │   └── superadmin.py # Routes SuperAdmin
+│   ├── templates/       # Templates HTML
+│   │   ├── base.html    # Template de base
+│   │   ├── agent/       # Templates agents
+│   │   ├── admin/       # Templates administration
+│   │   └── superadmin/  # Templates SuperAdmin
+│   ├── static/          # Fichiers statiques
+│   │   ├── css/         # Styles CSS
+│   │   ├── js/          # Scripts JavaScript
+│   │   └── img/         # Images
+│   └── utils/           # Utilitaires
+├── data/                # Données de test et configuration
+├── scripts/             # Scripts d'import et maintenance
+├── tests/               # Tests unitaires
+├── requirements.txt     # Dépendances Python
+└── run.py              # Point d'entrée de l'application
+```
+
+## 🚀 Installation
 
 ### Prérequis
 - Python 3.9 ou supérieur
-- Pip (gestionnaire de paquets Python)
+- pip (gestionnaire de paquets Python)
 - Git
 
-### Installation locale
-
-1. Cloner le dépôt Git :
+### 1. Cloner le repository
 ```bash
-git clone https://github.com/votre-nom/gabonmeteo.git
-cd gabonmeteo
+git clone https://github.com/[votre-username]/GabonMeteo.git
+cd GabonMeteo
 ```
 
-2. Créer un environnement virtuel Python :
+### 2. Créer un environnement virtuel
 ```bash
-python -m venv venv
-```
-
-3. Activer l'environnement virtuel :
-   - Sous Windows :
-   ```bash
-   venv\Scripts\activate
-   ```
-   - Sous Linux/MacOS :
-   ```bash
-   source venv/bin/activate
-   ```
-
-4. Installer les dépendances :
-```bash
-pip install -r requirements.txt
-```
-
-5. Lancer l'application :
-```bash
-python run.py
-```
-
-6. Accéder à l'application à l'adresse [http://127.0.0.1:5000](http://127.0.0.1:5000)
-
-### Installation avec Anaconda/Miniconda
-
-1. Créer un environnement Conda :
-```bash
+# Avec conda
 conda create -n gabonmeteo python=3.9
 conda activate gabonmeteo
+
+# Ou avec venv
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# ou
+venv\Scripts\activate     # Windows
 ```
 
-2. Installer les dépendances :
+### 3. Installer les dépendances
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Lancer l'application :
+### 4. Initialiser la base de données
 ```bash
 python run.py
 ```
 
-## Importation des données
+La base de données sera créée automatiquement au premier lancement.
 
-Pour importer des données météorologiques d'exemple :
+## ⚙️ Configuration
 
+### Comptes par défaut
+
+L'application crée automatiquement les comptes suivants :
+
+#### SuperAdmin
+- **Email** : `superadmin@gabonmeteo.com`
+- **Mot de passe** : `superadmin123`
+- **Accès** : Configuration système, gestion des rôles
+
+#### Admin
+- **Email** : `admin@gabonmeteo.com`
+- **Mot de passe** : `admin123`
+- **Accès** : Gestion des agents, validation des prélèvements
+
+### Variables d'environnement (optionnel)
+Créez un fichier `.env` pour personnaliser la configuration :
+```env
+SECRET_KEY=votre_clé_secrète_super_complexe
+DATABASE_URL=sqlite:///gabonmeteo.db
+DEBUG=True
+```
+
+## 🎮 Utilisation
+
+### Démarrage de l'application
+```bash
+python run.py
+```
+
+L'application sera accessible sur `http://localhost:5000`
+
+### Import de données
+Pour importer des données météorologiques existantes :
 ```bash
 python scripts/import_data.py data/sample_weather_data.csv
 ```
 
-## Utilisation de l'API
+### Création d'agents DGM
+1. Connectez-vous en tant qu'admin ou superadmin
+2. Allez dans "Administration" > "Gestion des agents"
+3. Cliquez sur "Ajouter un agent"
+4. Associez l'agent à un utilisateur existant
 
-GabonMétéo+ propose une API RESTful permettant d'accéder programmatiquement aux données météorologiques.
+## 👤 Gestion des utilisateurs
 
-### Exemples d'utilisation de l'API
+### Hiérarchie des rôles
 
-#### Python (avec Requests)
-```python
-import requests
+1. **SuperAdmin** 🛡️
+   - Accès complet au système
+   - Configuration des paramètres globaux
+   - Gestion des rôles utilisateurs
+   - Journaux système et sauvegardes
 
-# Récupérer les données météo actuelles
-url = "http://localhost:5000/api/current"
-response = requests.get(url)
-data = response.json()
+2. **Admin** ⚙️
+   - Gestion des utilisateurs et agents
+   - Validation des prélèvements
+   - Gestion des stations météorologiques
 
-# Afficher les résultats
-for station_data in data["data"]:
-    print(f"{station_data['station_name']}: {station_data['temperature']}°C")
-```
+3. **Agent DGM** 📊
+   - Saisie des prélèvements météorologiques
+   - Consultation de ses propres données
+   - Profil agent personnalisé
 
-#### JavaScript (avec Fetch API)
-```javascript
-// Récupérer les données météo actuelles
-fetch('http://localhost:5000/api/current')
-  .then(response => response.json())
-  .then(data => {
-    // Afficher les résultats
-    data.data.forEach(station => {
-      console.log(`${station.station_name}: ${station.temperature}°C`);
-    });
-  })
-  .catch(error => console.error('Erreur:', error));
-```
+4. **Utilisateur** 👀
+   - Consultation des données météorologiques
+   - Accès aux prévisions et alertes
 
-### Endpoints disponibles
+### Workflow de validation des prélèvements
 
-| Endpoint | Méthode | Description |
-|----------|---------|-------------|
-| `/api/status` | GET | Vérifier l'état de l'API |
-| `/api/stations` | GET | Liste des stations météo |
-| `/api/stations/{id}` | GET | Détails d'une station spécifique |
-| `/api/current` | GET | Données météo actuelles pour toutes les stations |
-| `/api/stations/{id}/current` | GET | Données actuelles pour une station spécifique |
-| `/api/stations/{id}/historical` | GET | Données historiques d'une station |
-| `/api/forecast` | GET | Prévisions pour toutes les stations |
-| `/api/stations/{id}/forecast` | GET | Prévisions pour une station spécifique |
-| `/api/statistics` | GET | Statistiques météorologiques |
+1. **Saisie** : L'agent DGM saisit ses prélèvements
+2. **Vérification** : Contrôles automatiques de cohérence
+3. **Validation** : Un admin valide ou rejette le prélèvement
+4. **Intégration** : Les données validées sont intégrées à la base
 
-Pour une documentation complète de l'API, consultez `/api-docs` dans l'application.
+## 🔧 API
 
-## Structure du projet
+L'application expose des endpoints REST pour l'intégration avec d'autres systèmes :
 
 ```
-gabonmeteo/
-├── app/                    # Application principale
-│   ├── models/             # Modèles de données
-│   ├── routes/             # Routes de l'application
-│   ├── static/             # Fichiers statiques (CSS, JS, images)
-│   ├── templates/          # Templates HTML
-│   └── utils/              # Fonctions utilitaires
-├── data/                   # Données d'exemple
-├── scripts/                # Scripts utilitaires
-├── tests/                  # Tests automatisés
-├── .gitignore              # Configuration Git
-├── README.md               # Documentation
-├── requirements.txt        # Dépendances
-└── run.py                  # Point d'entrée de l'application
+GET /api/stations          # Liste des stations météo
+GET /api/weather/latest    # Dernières données météo
+GET /api/forecasts         # Prévisions
+POST /api/data/upload      # Upload de données (admin requis)
 ```
 
-## Tests
+## 🤝 Contribution
 
-Pour exécuter les tests automatisés :
+Ce projet est développé spécifiquement pour la DGM du Gabon. Pour toute contribution :
 
-```bash
-python -m tests.test_app
-```
+1. Fork le projet
+2. Créer une branche feature (`git checkout -b feature/AmazingFeature`)
+3. Commit vos changements (`git commit -m 'Add some AmazingFeature'`)
+4. Push vers la branche (`git push origin feature/AmazingFeature`)
+5. Ouvrir une Pull Request
 
-## Déploiement
+## 📄 License
 
-### Déploiement sur un serveur Linux
+Ce projet est sous licence propriétaire. Tous droits réservés à Ahmed SOUARE.
 
-1. Installer les dépendances système :
-```bash
-sudo apt update
-sudo apt install python3-pip python3-dev nginx
-```
+## 👨‍💻 Auteur
 
-2. Configurer Gunicorn et Nginx (voir documentation complète)
+**Ahmed SOUARE**
+- Développeur principal
+- Solution propriétaire pour la DGM Gabon
+- Contact : [email-professionnel]
 
-### Déploiement sur Heroku
+## 📚 Documentation supplémentaire
 
-1. Installer l'outil CLI Heroku
-2. Créer une application Heroku :
-```bash
-heroku create gabonmeteo
-```
-3. Configurer les fichiers `Procfile` et `requirements.txt`
-4. Déployer :
-```bash
-git push heroku main
-```
+- [Guide d'installation détaillé](docs/installation.md)
+- [Manuel administrateur](docs/admin-guide.md)
+- [Guide utilisateur agent DGM](docs/agent-guide.md)
+- [API Documentation](docs/api.md)
 
-## Contribution
+## 🛣️ Roadmap
 
-Les contributions sont les bienvenues ! Pour contribuer :
+### Version 1.1 (À venir)
+- [ ] Module d'export avancé
+- [ ] Intégration API météo internationales
+- [ ] Notifications en temps réel
+- [ ] Application mobile compagnon
 
-1. Forkez le dépôt
-2. Créez une branche pour votre fonctionnalité (`git checkout -b feature/amazing-feature`)
-3. Committez vos changements (`git commit -m 'Add some amazing feature'`)
-4. Poussez vers la branche (`git push origin feature/amazing-feature`)
-5. Ouvrez une Pull Request
+### Version 1.2 (Planifié)
+- [ ] Intelligence artificielle pour prédictions
+- [ ] Tableau de bord temps réel
+- [ ] Rapports automatisés
+- [ ] API publique documentée
 
-## Licence
+---
 
-Ce projet est la propriété intellectuelle de [Ahmed SOUARE] et ne peut être utilisé sans autorisation explicite.
-
-## Auteur
-
-- **Ahmed SOUARE** - Développeur principal
-
-## Crédits
-
-- Direction Générale de Météorologie du Gabon pour les données météorologiques
-- [Bootstrap](https://getbootstrap.com/) pour le framework CSS
-- [Chart.js](https://www.chartjs.org/) pour les graphiques
-- [Leaflet](https://leafletjs.com/) pour les cartes interactives
-- [Flask](https://flask.palletsprojects.com/) pour le framework web
-
-## Version
-
-1.0.0 - Mai 2025
+*Dernière mise à jour : Mai 2025*

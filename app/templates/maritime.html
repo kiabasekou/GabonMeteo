@@ -1,0 +1,461 @@
+<!-- app/templates/maritime.html -->
+{% extends "base.html" %}
+
+{% block title %}Module Maritime - GabonMétéo+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .wave-animation {
+        background: linear-gradient(45deg, #2196F3, #03A9F4);
+        background-size: 200% 200%;
+        animation: waveAnimation 3s ease-in-out infinite;
+    }
+    
+    @keyframes waveAnimation {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    
+    .sea-state-indicator {
+        text-align: center;
+        padding: 20px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    }
+    
+    .tide-clock {
+        position: relative;
+        width: 150px;
+        height: 150px;
+        margin: 0 auto;
+        border: 3px solid #2196F3;
+        border-radius: 50%;
+        background: white;
+    }
+    
+    .maritime-card {
+        transition: all 0.3s ease;
+    }
+    
+    .maritime-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .navigation-safety-safe {
+        background-color: #4CAF50;
+        color: white;
+    }
+    
+    .navigation-safety-caution {
+        background-color: #FF9800;
+        color: white;
+    }
+    
+    .navigation-safety-danger {
+        background-color: #F44336;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1>🌊 Module Maritime</h1>
+    <p>Conditions marines, état de la mer et informations sur les marées pour les ports gabonais.</p>
+    
+    <!-- Calculateur d'état de la mer -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Calculateur d'État de la Mer</h5>
+                </div>
+                <div class="card-body">
+                    <form id="seaStateForm">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label for="windSpeed">Vitesse du vent (nœuds):</label>
+                                <input type="number" class="form-control" id="windSpeed" step="0.1" value="15" min="0">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="windDuration">Durée du vent (heures):</label>
+                                <input type="number" class="form-control" id="windDuration" step="0.1" value="12" min="0">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="fetchDistance">Distance de fetch (km):</label>
+                                <input type="number" class="form-control" id="fetchDistance" step="1" value="50" min="0">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="visibility">Visibilité (km):</label>
+                                <input type="number" class="form-control" id="visibility" step="0.1" value="5" min="0">
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-12">
+                                <button type="submit" class="btn btn-primary">Calculer l'État de la Mer</button>
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <div id="seaStateResult" class="mt-4" style="display: none;">
+                        <div class="alert alert-info">
+                            <h5>Résultat du calcul</h5>
+                            <div id="seaStateContent"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stations Marines -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Stations Maritimes</h5>
+                </div>
+                <div class="card-body">
+                    <div id="maritimeStationsContainer">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="sr-only">Chargement...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Détails d'une station sélectionnée -->
+    <div class="row mt-4" id="stationDetails" style="display: none;">
+        <div class="col-md-4">
+            <div class="card maritime-card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">État de la Mer</h5>
+                </div>
+                <div class="card-body sea-state-indicator">
+                    <div id="seaStateDisplay">
+                        <div class="wave-animation rounded p-3 mb-3">
+                            <h2 id="waveHeight">-- m</h2>
+                            <small>Hauteur des vagues</small>
+                        </div>
+                        <div id="seaStateDescription">--</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card maritime-card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Marées</h5>
+                </div>
+                <div class="card-body">
+                    <div class="tide-clock" id="tideClock">
+                        <canvas width="150" height="150"></canvas>
+                    </div>
+                    <div class="mt-3 text-center">
+                        <div><strong>Marée actuelle:</strong> <span id="currentTide">--</span></div>
+                        <div><strong>Prochaine haute:</strong> <span id="nextHighTide">--</span></div>
+                        <div><strong>Prochaine basse:</strong> <span id="nextLowTide">--</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card maritime-card">
+                <div class="card-header text-white" id="navigationHeader">
+                    <h5 class="mb-0">Sécurité Navigation</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center">
+                        <div class="badge p-3 mb-3" style="font-size: 1.2rem;" id="navigationBadge">
+                            --
+                        </div>
+                        <div id="navigationDescription">--</div>
+                        <div class="mt-3">
+                            <h6>Recommandations:</h6>
+                            <div id="navigationRecommendations">--</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadMaritimeStations();
+    
+    // Gérer le formulaire de calcul
+    document.getElementById('seaStateForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        calculateSeaState();
+    });
+});
+
+function loadMaritimeStations() {
+    fetch('/api/maritime/stations')
+        .then(response => response.json())
+        .then(data => {
+            displayMaritimeStations(data.stations);
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            document.getElementById('maritimeStationsContainer').innerHTML = 
+                '<div class="alert alert-danger">Erreur lors du chargement des stations maritimes</div>';
+        });
+}
+
+function displayMaritimeStations(stations) {
+    const container = document.getElementById('maritimeStationsContainer');
+    
+    if (stations.length === 0) {
+        container.innerHTML = '<div class="alert alert-warning">Aucune station maritime trouvée</div>';
+        return;
+    }
+    
+    let html = '<div class="row">';
+    
+    stations.forEach(station => {
+        const dataStatus = station.has_maritime_data ? 
+            '<span class="badge bg-success">Données disponibles</span>' :
+            '<span class="badge bg-secondary">Pas de données</span>';
+        
+        html += `
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card maritime-card">
+                    <div class="card-header">
+                        <h6 class="mb-0">${station.name}</h6>
+                        <small class="text-muted">${station.region}</small>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Coordonnées:</strong> ${station.latitude}, ${station.longitude}</p>
+                        ${dataStatus}
+                        <div class="mt-3">
+                            ${station.has_maritime_data ? 
+                                `<button class="btn btn-primary btn-sm" onclick="loadStationDetails(${station.id})">
+                                    <i class="bi bi-waves"></i> Voir Conditions
+                                </button>` :
+                                `<span class="text-muted">Données non disponibles</span>`
+                            }
+                            <button class="btn btn-outline-primary btn-sm" onclick="loadTideInformation(${station.id})">
+                                <i class="bi bi-arrow-up-down"></i> Marées
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function calculateSeaState() {
+    const formData = {
+        wind_speed: parseFloat(document.getElementById('windSpeed').value),
+        wind_duration_hours: parseFloat(document.getElementById('windDuration').value),
+        fetch_distance_km: parseFloat(document.getElementById('fetchDistance').value),
+        visibility: parseFloat(document.getElementById('visibility').value)
+    };
+    
+    fetch('/api/maritime/sea-state/calculate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert('Erreur: ' + data.error);
+            return;
+        }
+        
+        const resultDiv = document.getElementById('seaStateResult');
+        const contentDiv = document.getElementById('seaStateContent');
+        
+        contentDiv.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>État de la mer: <span class="badge bg-info">${data.sea_state} - ${data.description}</span></h6>
+                    <p><strong>Conditions:</strong> ${data.conditions}</p>
+                    <p><strong>Hauteur des vagues:</strong> ${data.wave_height} m</p>
+                    <p><strong>Période des vagues:</strong> ${data.wave_period} s</p>
+                </div>
+                <div class="col-md-6">
+                    <h6>Sécurité Navigation:</h6>
+                    <div class="badge badge-${data.navigation_safety.color} p-2">
+                        ${data.navigation_safety.description}
+                    </div>
+                    <p class="mt-2">${data.navigation_safety.recommendations}</p>
+                </div>
+            </div>
+        `;
+        
+        resultDiv.style.display = 'block';
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        alert('Erreur lors du calcul');
+    });
+}
+
+function loadStationDetails(stationId) {
+    fetch(`/api/maritime/conditions/${stationId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Erreur: ' + data.error);
+                return;
+            }
+            
+            displayStationDetails(data);
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            alert('Erreur lors du chargement des détails');
+        });
+}
+
+function displayStationDetails(data) {
+    const stationDetails = document.getElementById('stationDetails');
+    
+    // État de la mer
+    document.getElementById('waveHeight').textContent = `${data.sea_conditions.wave_height} m`;
+    document.getElementById('seaStateDescription').innerHTML = `
+        <strong>État ${data.sea_conditions.state}:</strong> ${data.sea_conditions.description}<br>
+        <small>${data.sea_conditions.conditions}</small>
+    `;
+    
+    // Marées
+    document.getElementById('currentTide').textContent = `${data.tides.current_height} m (${data.tides.direction})`;
+    document.getElementById('nextHighTide').textContent = new Date(data.tides.next_high).toLocaleTimeString();
+    document.getElementById('nextLowTide').textContent = new Date(data.tides.next_low).toLocaleTimeString();
+    
+    // Navigation
+    const navHeader = document.getElementById('navigationHeader');
+    const navBadge = document.getElementById('navigationBadge');
+    const navDesc = document.getElementById('navigationDescription');
+    const navRec = document.getElementById('navigationRecommendations');
+    
+    navHeader.className = `card-header text-white navigation-safety-${data.navigation.level.toLowerCase()}`;
+    navBadge.textContent = data.navigation.description;
+    navBadge.className = `badge p-3 mb-3 bg-${data.navigation.color}`;
+    navDesc.textContent = `Niveau: ${data.navigation.level}`;
+    navRec.textContent = data.navigation.recommendations;
+    
+    stationDetails.style.display = 'block';
+    stationDetails.scrollIntoView({ behavior: 'smooth' });
+}
+
+function loadTideInformation(stationId) {
+    fetch(`/api/maritime/tides/${stationId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Erreur: ' + data.error);
+                return;
+            }
+            
+            showTideModal(data);
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            alert('Erreur lors du chargement des marées');
+        });
+}
+
+function showTideModal(data) {
+    const modalHtml = `
+        <div class="modal fade" id="tideModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Informations Marées - ${data.station.name}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Conditions Actuelles</h6>
+                                <p><strong>Hauteur:</strong> ${data.current_conditions.tide_height} m</p>
+                                <p><strong>Direction:</strong> ${data.current_conditions.direction}</p>
+                                <p><strong>Heure:</strong> ${new Date(data.current_conditions.timestamp).toLocaleString()}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Prévisions 24h</h6>
+                                <div style="max-height: 200px; overflow-y: auto;">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Heure</th>
+                                                <th>Hauteur (m)</th>
+                                                <th>Direction</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${data.predictions_24h.slice(0, 12).map(pred => `
+                                                <tr>
+                                                    <td>${new Date(pred.time).toLocaleTimeString()}</td>
+                                                    <td>${pred.predicted_height}</td>
+                                                    <td>${pred.tide_direction}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('tideModal'));
+    modal.show();
+    
+    document.getElementById('tideModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
+
+// Fonction utilitaire pour débugger les API
+function debugAPIs() {
+    console.log('Test des APIs maritimes:');
+    
+    // Test stations
+    fetch('/api/maritime/stations')
+        .then(response => {
+            console.log('Stations:', response.status, response.ok);
+            return response.json();
+        })
+        .then(data => console.log('Stations data:', data))
+        .catch(error => console.error('Stations error:', error));
+    
+    // Test conditions (pour station 1)
+    fetch('/api/maritime/conditions/1')
+        .then(response => {
+            console.log('Conditions:', response.status, response.ok);
+            return response.json();
+        })
+        .then(data => console.log('Conditions data:', data))
+        .catch(error => console.error('Conditions error:', error));
+}
+
+// Appeler debugAPIs() dans la console pour diagnostiquer les erreurs
+</script>
+{% endblock %}

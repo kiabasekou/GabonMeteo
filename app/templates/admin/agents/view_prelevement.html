@@ -1,0 +1,332 @@
+{% extends "base.html" %}
+
+{% block title %}Détails du prélèvement - GabonMétéo+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Prélèvement #{{ prelevement.id }}</h1>
+    <a href="{{ url_for('admin_agent.prelevements') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Retour à la liste
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header {% if prelevement.validated %}bg-success{% else %}bg-warning{% endif %} text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        {% if prelevement.validated %}
+                        <i class="bi bi-check-circle-fill"></i> Prélèvement validé
+                        {% else %}
+                        <i class="bi bi-hourglass"></i> Prélèvement en attente de validation
+                        {% endif %}
+                    </h5>
+                    <div>
+                        {% if not prelevement.validated %}
+                        <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#validatePrelevementModal">
+                            <i class="bi bi-check-circle"></i> Valider
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#rejectPrelevementModal">
+                            <i class="bi bi-x-circle"></i> Rejeter
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="border-bottom pb-2 mb-3">Informations générales</h6>
+                        <table class="table table-borderless">
+                            <tr>
+                                <th style="width: 40%;">ID:</th>
+                                <td>{{ prelevement.id }}</td>
+                            </tr>
+                            <tr>
+                                <th>Date du prélèvement:</th>
+                                <td>{{ prelevement.date_prelevement.strftime('%d/%m/%Y %H:%M') }}</td>
+                            </tr>
+                            <tr>
+                                <th>Date d'enregistrement:</th>
+                                <td>{{ prelevement.timestamp.strftime('%d/%m/%Y %H:%M') }}</td>
+                            </tr>
+                            <tr>
+                                <th>Station:</th>
+                                <td>{{ prelevement.station.name }} ({{ prelevement.station.region }})</td>
+                            </tr>
+                            <tr>
+                                <th>Agent:</th>
+                                <td>
+                                    {{ prelevement.agent.user.username }}
+                                    <a href="{{ url_for('admin_agent.edit_agent', id=prelevement.agent.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-person"></i> Voir profil
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Matricule de l'agent:</th>
+                                <td>{{ prelevement.agent.matricule }}</td>
+                            </tr>
+                            <tr>
+                                <th>Statut:</th>
+                                <td>
+                                    {% if prelevement.validated %}
+                                    <span class="badge bg-success">Validé</span>
+                                    {% else %}
+                                    <span class="badge bg-warning text-dark">En attente</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="border-bottom pb-2 mb-3">Valeurs météorologiques</h6>
+                        <table class="table table-borderless">
+                            <tr>
+                                <th style="width: 40%;">Température:</th>
+                                <td>{{ prelevement.temperature|round(1) }}°C</td>
+                            </tr>
+                            <tr>
+                                <th>Humidité:</th>
+                                <td>{{ prelevement.humidity|round(1) if prelevement.humidity != None else "Non renseigné" }}%</td>
+                            </tr>
+                            <tr>
+                                <th>Pression atmosphérique:</th>
+                                <td>{{ prelevement.pressure|round(1) if prelevement.pressure != None else "Non renseigné" }} hPa</td>
+                            </tr>
+                            <tr>
+                                <th>Vitesse du vent:</th>
+                                <td>{{ prelevement.wind_speed|round(1) if prelevement.wind_speed != None else "Non renseigné" }} km/h</td>
+                            </tr>
+                            <tr>
+                                <th>Direction du vent:</th>
+                                <td>
+                                    {% if prelevement.wind_direction != None %}
+                                    {{ prelevement.wind_direction|round(0) }}°
+                                    {% if prelevement.wind_direction >= 337.5 or prelevement.wind_direction < 22.5 %}
+                                    (Nord)
+                                    {% elif prelevement.wind_direction >= 22.5 and prelevement.wind_direction < 67.5 %}
+                                    (Nord-Est)
+                                    {% elif prelevement.wind_direction >= 67.5 and prelevement.wind_direction < 112.5 %}
+                                    (Est)
+                                    {% elif prelevement.wind_direction >= 112.5 and prelevement.wind_direction < 157.5 %}
+                                    (Sud-Est)
+                                    {% elif prelevement.wind_direction >= 157.5 and prelevement.wind_direction < 202.5 %}
+                                    (Sud)
+                                    {% elif prelevement.wind_direction >= 202.5 and prelevement.wind_direction < 247.5 %}
+                                    (Sud-Ouest)
+                                    {% elif prelevement.wind_direction >= 247.5 and prelevement.wind_direction < 292.5 %}
+                                    (Ouest)
+                                    {% elif prelevement.wind_direction >= 292.5 and prelevement.wind_direction < 337.5 %}
+                                    (Nord-Ouest)
+                                    {% endif %}
+                                    {% else %}
+                                    Non renseigné
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Précipitations:</th>
+                                <td>{{ prelevement.precipitation|round(1) if prelevement.precipitation != None else "Non renseigné" }} mm</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                
+                {% if prelevement.notes %}
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <h6 class="border-bottom pb-2 mb-3">Notes et observations</h6>
+                        <div class="card">
+                            <div class="card-body">
+                                {{ prelevement.notes|nl2br }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if not prelevement.validated %}
+                <div class="row mt-4">
+                    <div class="col-md-12 text-center">
+                        <div class="d-flex justify-content-center">
+                            <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#validatePrelevementModal">
+                                <i class="bi bi-check-circle"></i> Valider
+                            </button>
+                            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectPrelevementModal">
+                                <i class="bi bi-x-circle"></i> Rejeter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Localisation de la station</h5>
+            </div>
+            <div class="card-body">
+                <div id="map" style="height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Comparaison avec les données récentes</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Paramètre</th>
+                                <th>Valeur actuelle</th>
+                                <th>Moyenne récente</th>
+                                <th>Écart</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Température</td>
+                                <td>{{ prelevement.temperature|round(1) }}°C</td>
+                                <td>{{ avg_temperature|round(1) if avg_temperature is defined else "N/A" }}°C</td>
+                                <td>
+                                    {% if avg_temperature is defined and avg_temperature != None %}
+                                    {% set temp_diff = prelevement.temperature - avg_temperature %}
+                                    {% if temp_diff > 0 %}
+                                    <span class="text-danger">+{{ temp_diff|round(1) }}°C</span>
+                                    {% elif temp_diff < 0 %}
+                                    <span class="text-primary">{{ temp_diff|round(1) }}°C</span>
+                                    {% else %}
+                                    <span class="text-muted">0°C</span>
+                                    {% endif %}
+                                    {% else %}
+                                    <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Humidité</td>
+                                <td>{{ prelevement.humidity|round(1) if prelevement.humidity != None else "N/A" }}%</td>
+                                <td>{{ avg_humidity|round(1) if avg_humidity is defined else "N/A" }}%</td>
+                                <td>
+                                    {% if avg_humidity is defined and avg_humidity != None and prelevement.humidity != None %}
+                                    {% set humidity_diff = prelevement.humidity - avg_humidity %}
+                                    {% if humidity_diff > 0 %}
+                                    <span class="text-primary">+{{ humidity_diff|round(1) }}%</span>
+                                    {% elif humidity_diff < 0 %}
+                                    <span class="text-danger">{{ humidity_diff|round(1) }}%</span>
+                                    {% else %}
+                                    <span class="text-muted">0%</span>
+                                    {% endif %}
+                                    {% else %}
+                                    <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Précipitations</td>
+                                <td>{{ prelevement.precipitation|round(1) if prelevement.precipitation != None else "N/A" }} mm</td>
+                                <td>{{ avg_precipitation|round(1) if avg_precipitation is defined else "N/A" }} mm</td>
+                                <td>
+                                    {% if avg_precipitation is defined and avg_precipitation != None and prelevement.precipitation != None %}
+                                    {% set precip_diff = prelevement.precipitation - avg_precipitation %}
+                                    {% if precip_diff > 0 %}
+                                    <span class="text-primary">+{{ precip_diff|round(1) }} mm</span>
+                                    {% elif precip_diff < 0 %}
+                                    <span class="text-danger">{{ precip_diff|round(1) }} mm</span>
+                                    {% else %}
+                                    <span class="text-muted">0 mm</span>
+                                    {% endif %}
+                                    {% else %}
+                                    <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de validation -->
+<div class="modal fade" id="validatePrelevementModal" tabindex="-1" aria-labelledby="validatePrelevementModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="validatePrelevementModalLabel">Valider le prélèvement #{{ prelevement.id }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Voulez-vous valider ce prélèvement et l'intégrer aux données météorologiques officielles?</p>
+                <div class="alert alert-info">
+                    <strong>Information:</strong> Une fois validé, ce prélèvement sera converti en donnée météorologique et ne pourra plus être modifié.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <form action="{{ url_for('admin_agent.validate_prelevement', id=prelevement.id) }}" method="POST">
+                    <button type="submit" class="btn btn-success">Valider</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de rejet -->
+<div class="modal fade" id="rejectPrelevementModal" tabindex="-1" aria-labelledby="rejectPrelevementModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="rejectPrelevementModalLabel">Rejeter le prélèvement #{{ prelevement.id }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('admin_agent.reject_prelevement', id=prelevement.id) }}" method="POST">
+                <div class="modal-body">
+                    <p>Veuillez indiquer la raison du rejet de ce prélèvement:</p>
+                    <div class="mb-3">
+                        <label for="reject_reason" class="form-label">Raison du rejet *</label>
+                        <textarea class="form-control" id="reject_reason" name="reject_reason" rows="3" required></textarea>
+                        <small class="form-text text-muted">Cette information sera visible par l'agent qui a effectué le prélèvement.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-danger">Rejeter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialisation de la carte
+        var map = L.map('map').setView([{{ prelevement.station.latitude }}, {{ prelevement.station.longitude }}], 13);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        var marker = L.marker([{{ prelevement.station.latitude }}, {{ prelevement.station.longitude }}]).addTo(map);
+        marker.bindPopup("<strong>{{ prelevement.station.name }}</strong><br>{{ prelevement.station.region }}").openPopup();
+    });
+</script>
+{% endblock %}

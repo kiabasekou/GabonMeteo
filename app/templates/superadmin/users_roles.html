@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}Gestion des rôles - GabonMétéo+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .role-badge {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.6rem;
+    }
+    .badge-superadmin {
+        background-color: #dc3545;
+    }
+    .badge-admin {
+        background-color: #fd7e14;
+        color: #212529;
+    }
+    .badge-user {
+        background-color: #6c757d;
+    }
+    .badge-sector {
+        background-color: #20c997;
+    }
+    .user-row {
+        transition: all 0.2s ease;
+    }
+    .user-row:hover {
+        background-color: rgba(0,0,0,0.05);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-people-fill"></i> Gestion des rôles utilisateurs</h1>
+    <a href="{{ url_for('superadmin.dashboard') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Retour au tableau de bord
+    </a>
+</div>
+
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle-fill"></i> <strong>Attention!</strong> 
+    La modification des rôles utilisateurs impacte directement leurs autorisations. Utilisez cette fonctionnalité avec précaution.
+</div>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-key-fill"></i> Rôles utilisateurs</h5>
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-danger text-white h-100">
+                    <div class="card-body d-flex flex-column align-items-center justify-content-center text-center">
+                        <i class="bi bi-shield-lock-fill mb-2" style="font-size: 2.5rem;"></i>
+                        <h5>Super Admin</h5>
+                        <p class="mb-0">Contrôle total du système</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-dark h-100">
+                    <div class="card-body d-flex flex-column align-items-center justify-content-center text-center">
+                        <i class="bi bi-gear-fill mb-2" style="font-size: 2.5rem;"></i>
+                        <h5>Admin</h5>
+                        <p class="mb-0">Gestion des utilisateurs et contenus</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-dark h-100">
+                    <div class="card-body d-flex flex-column align-items-center justify-content-center text-center">
+                        <i class="bi bi-briefcase-fill mb-2" style="font-size: 2.5rem;"></i>
+                        <h5>Sectoriel</h5>
+                        <p class="mb-0">Accès à des modules spécifiques</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-secondary text-white h-100">
+                    <div class="card-body d-flex flex-column align-items-center justify-content-center text-center">
+                        <i class="bi bi-person-fill mb-2" style="font-size: 2.5rem;"></i>
+                        <h5>Utilisateur</h5>
+                        <p class="mb-0">Accès standard</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <h6 class="border-bottom pb-2 mb-3">Liste des utilisateurs et leurs rôles</h6>
+        
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Utilisateur</th>
+                        <th>Email</th>
+                        <th>Rôle actuel</th>
+                        <th>Agent DGM</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr class="user-row">
+                        <td>{{ user.id }}</td>
+                        <td>{{ user.username }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>
+                            {% if user.role == 'superadmin' %}
+                            <span class="badge role-badge badge-superadmin">Super Admin</span>
+                            {% elif user.role == 'admin' %}
+                            <span class="badge role-badge badge-admin">Admin</span>
+                            {% elif user.role == 'sector_specific' %}
+                            <span class="badge role-badge badge-sector">Sectoriel</span>
+                            {% else %}
+                            <span class="badge role-badge badge-user">Utilisateur</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.agent %}
+                            <span class="badge bg-primary">Agent DGM</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.id != current_user.id %}
+                            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#changeRoleModal{{ user.id }}">
+                                <i class="bi bi-pencil-square"></i> Modifier
+                            </button>
+                            
+                            <!-- Modal pour changer le rôle -->
+                            <div class="modal fade" id="changeRoleModal{{ user.id }}" tabindex="-1" aria-labelledby="changeRoleModalLabel{{ user.id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-primary text-white">
+                                            <h5 class="modal-title" id="changeRoleModalLabel{{ user.id }}">Modifier le rôle de {{ user.username }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <form action="{{ url_for('superadmin.update_role', id=user.id) }}" method="POST">
+                                            <div class="modal-body">
+                                                <div class="mb-3">
+                                                    <label for="role{{ user.id }}" class="form-label">Nouveau rôle</label>
+                                                    <select class="form-select" id="role{{ user.id }}" name="role">
+                                                        <option value="user" {% if user.role == 'user' %}selected{% endif %}>Utilisateur</option>
+                                                        <option value="sector_specific" {% if user.role == 'sector_specific' %}selected{% endif %}>Sectoriel</option>
+                                                        <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
+                                                        <option value="superadmin" {% if user.role == 'superadmin' %}selected{% endif %}>Super Admin</option>
+                                                    </select>
+                                                </div>
+                                                <div class="alert alert-warning">
+                                                    <i class="bi bi-exclamation-triangle-fill"></i> Attention: Changer un utilisateur en Super Admin lui donne un accès complet au système.
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                <button type="submit" class="btn btn-primary">Enregistrer</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <span class="text-muted">Vous-même</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="bi bi-info-circle-fill"></i> Description des rôles</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6><span class="badge bg-danger">Super Admin</span></h6>
+                <ul>
+                    <li>Accès complet à toutes les fonctionnalités</li>
+                    <li>Configuration du système</li>
+                    <li>Gestion des sauvegardes</li>
+                    <li>Gestion des journaux système</li>
+                    <li>Modification des rôles utilisateurs</li>
+                    <li>Import et export en masse des données</li>
+                </ul>
+                
+                <h6><span class="badge bg-warning text-dark">Admin</span></h6>
+                <ul>
+                    <li>Gestion des utilisateurs</li>
+                    <li>Gestion des agents DGM</li>
+                    <li>Validation des prélèvements</li>
+                    <li>Gestion des directions et services</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6><span class="badge bg-info text-dark">Sectoriel</span></h6>
+                <ul>
+                    <li>Accès aux modules spécifiques (aviation, maritime...)</li>
+                    <li>Accès aux données sectorielles détaillées</li>
+                    <li>Consultation des historiques spécifiques</li>
+                </ul>
+                
+                <h6><span class="badge bg-secondary">Utilisateur</span></h6>
+                <ul>
+                    <li>Consultation des prévisions météorologiques</li>
+                    <li>Consultation des données historiques</li>
+                    <li>Consultation des alertes météorologiques</li>
+                    <li>Accès aux informations agricoles</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

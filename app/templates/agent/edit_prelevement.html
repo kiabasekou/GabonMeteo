@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Modifier prélèvement - GabonMétéo+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Modifier prélèvement #{{ prelevement.id }}</h1>
+    <a href="{{ url_for('agent.prelevements') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Retour aux prélèvements
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">Formulaire de modification</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('agent.edit_prelevement', id=prelevement.id) }}">
+                    <div class="row">
+                        <!-- Colonne de gauche -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="station_id" class="form-label">Station *</label>
+                                <select class="form-select" id="station_id" name="station_id" required>
+                                    {% for station in stations %}
+                                    <option value="{{ station.id }}" {% if station.id == prelevement.station_id %}selected{% endif %}>
+                                        {{ station.name }} ({{ station.region }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <small class="form-text text-muted">Station où le prélèvement a été effectué</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="date_prelevement" class="form-label">Date du prélèvement *</label>
+                                <input type="date" class="form-control" id="date_prelevement" name="date_prelevement" value="{{ date_str }}" required>
+                                <small class="form-text text-muted">Date à laquelle le prélèvement a été effectué</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="time_prelevement" class="form-label">Heure du prélèvement *</label>
+                                <input type="time" class="form-control" id="time_prelevement" name="time_prelevement" value="{{ time_str }}" required>
+                                <small class="form-text text-muted">Heure à laquelle le prélèvement a été effectué</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Colonne de droite -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="temperature" class="form-label">Température (°C) *</label>
+                                <input type="number" step="0.1" class="form-control" id="temperature" name="temperature" value="{{ prelevement.temperature }}" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="humidity" class="form-label">Humidité (%)</label>
+                                <input type="number" step="0.1" class="form-control" id="humidity" name="humidity" value="{{ prelevement.humidity if prelevement.humidity != None }}">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="pressure" class="form-label">Pression atmosphérique (hPa)</label>
+                                <input type="number" step="0.1" class="form-control" id="pressure" name="pressure" value="{{ prelevement.pressure if prelevement.pressure != None }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Deuxième rangée -->
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="wind_speed" class="form-label">Vitesse du vent (km/h)</label>
+                                <input type="number" step="0.1" class="form-control" id="wind_speed" name="wind_speed" value="{{ prelevement.wind_speed if prelevement.wind_speed != None }}">
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="wind_direction" class="form-label">Direction du vent (°)</label>
+                                <input type="number" step="1" class="form-control" id="wind_direction" name="wind_direction" value="{{ prelevement.wind_direction if prelevement.wind_direction != None }}">
+                                <small class="form-text text-muted">0° = Nord, 90° = Est, 180° = Sud, 270° = Ouest</small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="precipitation" class="form-label">Précipitations (mm)</label>
+                                <input type="number" step="0.1" class="form-control" id="precipitation" name="precipitation" value="{{ prelevement.precipitation if prelevement.precipitation != None }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes et observations</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="4">{{ prelevement.notes }}</textarea>
+                        <small class="form-text text-muted">Ajoutez toute information pertinente concernant les conditions météorologiques ou les circonstances du prélèvement</small>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> Attention: Cette modification sera enregistrée et le prélèvement sera à nouveau soumis à validation.
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('agent.prelevements') }}" class="btn btn-secondary me-md-2">
+                            <i class="bi bi-x-circle"></i> Annuler
+                        </a>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-save"></i> Enregistrer les modifications
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Guide de modification</h5>
+            </div>
+            <div class="card-body">
+                <h6>Instructions pour la modification des données</h6>
+                <ul>
+                    <li>Veillez à ne modifier que les données qui comportent effectivement des erreurs.</li>
+                    <li>Si vous modifiez des valeurs, précisez la raison de la modification dans les notes.</li>
+                    <li>Les prélèvements modifiés sont soumis à une nouvelle validation par un administrateur.</li>
+                </ul>
+                
+                <h6>Remarques importantes</h6>
+                <ul>
+                    <li>Les champs marqués d'un astérisque (*) sont obligatoires.</li>
+                    <li>Vérifiez soigneusement vos modifications avant de les enregistrer.</li>
+                    <li>Une fois validé, un prélèvement ne peut plus être modifié.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

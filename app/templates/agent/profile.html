@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Profil agent - GabonMétéo+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Mon profil</h1>
+    <a href="{{ url_for('agent.dashboard') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Retour au tableau de bord
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Informations personnelles</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <i class="bi bi-person-circle" style="font-size: 6rem;"></i>
+                    <h4 class="mt-2">{{ agent.user.username }}</h4>
+                    <p class="text-muted">{{ agent.fonction }}</p>
+                </div>
+                <table class="table table-borderless">
+                    <tr>
+                        <th>Matricule:</th>
+                        <td>{{ agent.matricule }}</td>
+                    </tr>
+                    <tr>
+                        <th>Email:</th>
+                        <td>{{ agent.user.email }}</td>
+                    </tr>
+                    <tr>
+                        <th>Date de naissance:</th>
+                        <td>{{ agent.date_naissance.strftime('%d/%m/%Y') }}</td>
+                    </tr>
+                    {% if agent.date_embauche %}
+                    <tr>
+                        <th>Date d'embauche:</th>
+                        <td>{{ agent.date_embauche.strftime('%d/%m/%Y') }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Affectation professionnelle</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <th>Direction:</th>
+                        <td>{{ agent.service.direction.name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Service:</th>
+                        <td>{{ agent.service.name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Fonction:</th>
+                        <td>{{ agent.fonction }}</td>
+                    </tr>
+                    <tr>
+                        <th>Station d'affectation:</th>
+                        <td>
+                            {% if agent.station %}
+                            {{ agent.station.name }} ({{ agent.station.region }})
+                            {% else %}
+                            Aucune station d'affectation
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Statistiques des prélèvements</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <div class="card border-light mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">Total des prélèvements</h5>
+                                <p class="display-4">{{ agent.prelevements.count() }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-light mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">Prélèvements validés</h5>
+                                <p class="display-4">{{ agent.prelevements.filter_by(validated=true).count() }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-light mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">Prélèvements en attente</h5>
+                                <p class="display-4">{{ agent.prelevements.filter_by(validated=false).count() }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('agent.prelevements') }}" class="btn btn-primary">
+                        <i class="bi bi-list"></i> Voir tous mes prélèvements
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
