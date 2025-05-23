@@ -21,8 +21,20 @@ def create_app():
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
     
-    # Import des modèles (après initialisation de db)
-    from app.models import user, weather_data, agent
+    # Import des modèles dans le bon ordre - TRÈS IMPORTANT
+    with app.app_context():
+        # Import tous les modèles pour s'assurer qu'ils sont enregistrés
+        from app.models import (
+            User, 
+            WeatherStation, 
+            WeatherData,
+            Direction,
+            Service,
+            AgentDGM,
+            Prelevement,
+            TurbulenceData,
+            MaritimeData
+        )
     
     # Import et enregistrement des blueprints
     from app.routes.main import main_bp
@@ -30,25 +42,32 @@ def create_app():
     from app.routes.agent import agent_bp
     from app.routes.admin_agent import admin_agent_bp
     from app.routes.superadmin import superadmin_bp
+    from app.routes.api import api_bp
+    from app.routes.aviation import aviation_bp
+    from app.routes.maritime import maritime_bp
     
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(agent_bp)
     app.register_blueprint(admin_agent_bp)
     app.register_blueprint(superadmin_bp)
+    app.register_blueprint(api_bp)
+    app.register_blueprint(aviation_bp)
+    app.register_blueprint(maritime_bp)
     
     # Création des tables de la base de données
     with app.app_context():
         db.create_all()
         
         # Création d'un utilisateur administrateur par défaut si aucun n'existe
-        if not user.User.query.filter_by(role='admin').first() and not user.User.query.filter_by(role='superadmin').first():
-            admin = user.User(username='admin', email='admin@gabonmeteo.com', role='admin')
+        from app.models.user import User
+        if not User.query.filter_by(role='admin').first() and not User.query.filter_by(role='superadmin').first():
+            admin = User(username='admin', email='admin@gabonmeteo.com', role='admin')
             admin.set_password('admin123')
             db.session.add(admin)
             
             # Création d'un super administrateur par défaut
-            superadmin = user.User(username='superadmin', email='superadmin@gabonmeteo.com', role='superadmin')
+            superadmin = User(username='superadmin', email='superadmin@gabonmeteo.com', role='superadmin')
             superadmin.set_password('superadmin123')
             db.session.add(superadmin)
             

@@ -1,0 +1,668 @@
+<!-- app/templates/dgm/hierarchical_dashboard.html -->
+{% extends "base.html" %}
+
+{% block title %}Tableau de Bord DGM - {{ agent.fonction }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hierarchy-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 1000;
+    }
+    
+    .permission-indicator {
+        border-left: 4px solid;
+        padding: 10px 15px;
+        margin-bottom: 15px;
+        border-radius: 0 5px 5px 0;
+    }
+    
+    .supervisor-level {
+        border-color: #ff6b35;
+        background-color: #fff8f5;
+    }
+    
+    .agent-level {
+        border-color: #4ecdc4;
+        background-color: #f0fffe;
+    }
+    
+    .task-priority-high {
+        border-left: 4px solid #dc3545;
+    }
+    
+    .task-priority-medium {
+        border-left: 4px solid #ffc107;
+    }
+    
+    .task-priority-low {
+        border-left: 4px solid #28a745;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    }
+    
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: var(--primary-color);
+        margin: 10px 0;
+    }
+    
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .quick-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 20px 0;
+    }
+    
+    .action-btn {
+        flex: 1;
+        min-width: 200px;
+        padding: 15px;
+        text-align: center;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        color: white;
+    }
+    
+    .action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        color: white;
+    }
+    
+    .action-validate {
+        background: linear-gradient(135deg, #28a745, #20c997);
+    }
+    
+    .action-report {
+        background: linear-gradient(135deg, #007bff, #6f42c1);
+    }
+    
+    .action-agents {
+        background: linear-gradient(135deg, #fd7e14, #e83e8c);
+    }
+    
+    .workflow-timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    
+    .workflow-timeline::before {
+        content: '';
+        position: absolute;
+        left: 10px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #dee2e6;
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-bottom: 20px;
+        padding: 15px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -25px;
+        top: 20px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--primary-color);
+        border: 3px solid white;
+        box-shadow: 0 0 0 2px #dee2e6;
+    }
+    
+    .data-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 30px;
+        margin-top: 30px;
+    }
+    
+    @media (max-width: 768px) {
+        .data-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .quick-actions {
+            flex-direction: column;
+        }
+        
+        .action-btn {
+            min-width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header avec badge hiérarchique -->
+    <div class="d-flex justify-content-between align-items-center mb-4 position-relative">
+        <div>
+            <h1>
+                <i class="bi bi-speedometer2"></i> 
+                Tableau de Bord DGM
+            </h1>
+            <p class="text-muted mb-0">{{ agent.fonction }} - {{ agent.service.name }}</p>
+        </div>
+        
+        <div class="hierarchy-badge">
+            {% if permissions.can_view_all_services %}
+            <span class="badge bg-warning text-dark fs-6">
+                <i class="bi bi-star-fill"></i> Superviseur
+            </span>
+            {% else %}
+            <span class="badge bg-info fs-6">
+                <i class="bi bi-person-badge"></i> Agent
+            </span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Indicateur de permissions -->
+    <div class="permission-indicator {% if permissions.can_view_all_services %}supervisor-level{% else %}agent-level{% endif %}">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h6 class="mb-1">
+                    {% if permissions.can_view_all_services %}
+                    <i class="bi bi-shield-check"></i> Niveau Superviseur
+                    {% else %}
+                    <i class="bi bi-person-check"></i> Niveau Agent
+                    {% endif %}
+                </h6>
+                <small>
+                    Accès à {{ permissions.stations_access|length }} station(s) 
+                    et {{ permissions.services_access|length }} service(s)
+                    {% if permissions.can_validate %} • Droits de validation{% endif %}
+                </small>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="{{ url_for('dgm.get_user_permissions') }}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-info-circle"></i> Détails
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistiques hiérarchiques -->
+    <div class="stats-grid">
+        {% if permissions.can_view_all_services %}
+        <!-- Stats superviseur -->
+        <div class="stat-card">
+            <div class="stat-label">Agents supervisés</div>
+            <div class="stat-value">{{ stats.agents_sous_supervision }}</div>
+            <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted">Dans vos services</small>
+                <a href="{{ url_for('dgm.manage_delegations') }}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-people"></i>
+                </a>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-label">Prélèvements à valider</div>
+            <div class="stat-value text-warning">{{ stats.prelevements_a_valider }}</div>
+            <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted">En attente</small>
+                <a href="{{ url_for('dgm.validation_center') }}" class="btn btn-sm btn-warning">
+                    <i class="bi bi-check-circle"></i>
+                </a>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-label">Stations supervisées</div>
+            <div class="stat-value">{{ stats.stations_supervisees }}</div>
+            <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted">Sous votre responsabilité</small>
+                <a href="{{ url_for('dgm.hierarchical_reports') }}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-graph-up"></i>
+                </a>
+            </div>
+        </div>
+        {% else %}
+        <!-- Stats agent -->
+        <div class="stat-card">
+            <div class="stat-label">Mes prélèvements</div>
+            <div class="stat-value">{{ stats.mes_prelevements }}</div>
+            <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted">Total effectués</small>
+                <a href="{{ url_for('agent.prelevements') }}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-list"></i>
+                </a>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-label">Validés</div>
+            <div class="stat-value text-success">{{ stats.prelevements_valides }}</div>
+            <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted">Approuvés</small>
+                <span class="badge bg-success">
+                    {{ ((stats.prelevements_valides / stats.mes_prelevements * 100) if stats.mes_prelevements > 0 else 0)|round(1) }}%
+                </span>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-label">En attente</div>
+            <div class="stat-value text-warning">{{ stats.prelevements_en_attente }}</div>
+            <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted">Non validés</small>
+                <a href="{{ url_for('agent.add_prelevement') }}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-circle"></i>
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Actions rapides -->
+    <div class="quick-actions">
+        {% if permissions.can_validate %}
+        <a href="{{ url_for('dgm.validation_center') }}" class="action-btn action-validate">
+            <i class="bi bi-check-circle-fill mb-2" style="font-size: 1.5rem;"></i>
+            <div>Centre de Validation</div>
+            <small>Valider les prélèvements</small>
+        </a>
+        {% endif %}
+        
+        {% if permissions.can_view_all_services %}
+        <a href="{{ url_for('dgm.hierarchical_reports') }}" class="action-btn action-report">
+            <i class="bi bi-graph-up mb-2" style="font-size: 1.5rem;"></i>
+            <div>Rapports</div>
+            <small>Analyses & statistiques</small>
+        </a>
+        
+        <a href="{{ url_for('admin_agent.index') }}" class="action-btn action-agents">
+            <i class="bi bi-people-fill mb-2" style="font-size: 1.5rem;"></i>
+            <div>Gestion Agents</div>
+            <small>Superviser l'équipe</small>
+        </a>
+        {% else %}
+        <a href="{{ url_for('agent.add_prelevement') }}" class="action-btn action-validate">
+            <i class="bi bi-plus-circle-fill mb-2" style="font-size: 1.5rem;"></i>
+            <div>Nouveau Prélèvement</div>
+            <small>Saisir des données</small>
+        </a>
+        
+        <a href="{{ url_for('agent.prelevements') }}" class="action-btn action-report">
+            <i class="bi bi-list-ul mb-2" style="font-size: 1.5rem;"></i>
+            <div>Mes Prélèvements</div>
+            <small>Historique & suivi</small>
+        </a>
+        {% endif %}
+        
+        <a href="{{ url_for('dgm.export_my_scope') }}" class="action-btn action-report">
+            <i class="bi bi-download mb-2" style="font-size: 1.5rem;"></i>
+            <div>Export</div>
+            <small>Télécharger les données</small>
+        </a>
+    </div>
+
+    <!-- Grille principale -->
+    <div class="data-grid">
+        <!-- Colonne principale -->
+        <div>
+            <!-- Tâches en attente -->
+            {% if pending_tasks %}
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> 
+                        Tâches en attente ({{ pending_tasks|length }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for task in pending_tasks %}
+                    <div class="alert alert-light task-priority-{{ task.priority }} mb-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">
+                                    {% if task.type == 'validation' %}
+                                    <i class="bi bi-check-circle"></i>
+                                    {% elif task.type == 'missing_data' %}
+                                    <i class="bi bi-exclamation-circle"></i>
+                                    {% endif %}
+                                    {{ task.description }}
+                                </h6>
+                                <small class="text-muted">
+                                    Priorité: 
+                                    <span class="badge bg-{{ 'danger' if task.priority == 'high' else 'warning' if task.priority == 'medium' else 'info' }}">
+                                        {{ task.priority|title }}
+                                    </span>
+                                </small>
+                                {% if task.stations is defined %}
+                                <div class="mt-2">
+                                    <small><strong>Stations concernées:</strong> {{ task.stations|join(', ') }}</small>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                {% if task.url is defined %}
+                                <a href="{{ task.url }}" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-arrow-right"></i> Traiter
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Données récentes -->
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clock-history"></i> 
+                        {% if permissions.can_view_all_services %}Activité récente{% else %}Mes derniers prélèvements{% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if permissions.can_view_all_services %}
+                        {% if recent_data.recent_prelevements %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Agent</th>
+                                        <th>Station</th>
+                                        <th>Date</th>
+                                        <th>Statut</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for prelevement in recent_data.recent_prelevements %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ prelevement.agent.user.username }}</strong><br>
+                                            <small class="text-muted">{{ prelevement.agent.matricule }}</small>
+                                        </td>
+                                        <td>{{ prelevement.station.name }}</td>
+                                        <td>{{ prelevement.date_prelevement.strftime('%d/%m/%Y %H:%M') }}</td>
+                                        <td>
+                                            {% if prelevement.validated %}
+                                            <span class="badge bg-success">Validé</span>
+                                            {% else %}
+                                            <span class="badge bg-warning text-dark">En attente</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if not prelevement.validated and permissions.can_validate %}
+                                            <button class="btn btn-sm btn-success" onclick="validatePrelevement({{ prelevement.id }})">
+                                                <i class="bi bi-check"></i>
+                                            </button>
+                                            {% endif %}
+                                            <a href="{{ url_for('admin_agent.view_prelevement', id=prelevement.id) }}" class="btn btn-sm btn-info">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <p class="text-center text-muted">Aucun prélèvement récent dans votre périmètre.</p>
+                        {% endif %}
+                    {% else %}
+                        {% if recent_data.mes_recent_prelevements %}
+                        <div class="workflow-timeline">
+                            {% for prelevement in recent_data.mes_recent_prelevements %}
+                            <div class="timeline-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">{{ prelevement.station.name }}</h6>
+                                        <p class="mb-1">
+                                            Température: {{ prelevement.temperature }}°C
+                                            {% if prelevement.precipitation %}
+                                            • Précipitations: {{ prelevement.precipitation }}mm
+                                            {% endif %}
+                                        </p>
+                                        <small class="text-muted">{{ prelevement.date_prelevement.strftime('%d/%m/%Y à %H:%M') }}</small>
+                                    </div>
+                                    <div>
+                                        {% if prelevement.validated %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle"></i> Validé
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="bi bi-clock"></i> En attente
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-inbox" style="font-size: 3rem; color: #dee2e6;"></i>
+                            <p class="text-muted mt-3">Aucun prélèvement récent</p>
+                            <a href="{{ url_for('agent.add_prelevement') }}" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> Effectuer un prélèvement
+                            </a>
+                        </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div>
+            <!-- Informations personnelles -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-person-circle"></i> Mon profil
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <i class="bi bi-person-circle" style="font-size: 3rem; color: var(--primary-color);"></i>
+                        <h5 class="mt-2">{{ agent.user.username }}</h5>
+                        <p class="text-muted mb-0">{{ agent.matricule }}</p>
+                    </div>
+                    <hr>
+                    <div class="small">
+                        <p><strong>Fonction:</strong> {{ agent.fonction }}</p>
+                        <p><strong>Service:</strong> {{ agent.service.name }}</p>
+                        <p><strong>Direction:</strong> {{ agent.service.direction.name }}</p>
+                        {% if agent.station %}
+                        <p><strong>Station:</strong> {{ agent.station.name }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('agent.profile') }}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-gear"></i> Modifier profil
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Raccourcis -->
+            <div class="card mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-lightning-fill"></i> Raccourcis
+                    </h6>
+                </div>
+                <div class="card-body p-2">
+                    <div class="list-group list-group-flush">
+                        {% if permissions.can_validate %}
+                        <a href="{{ url_for('dgm.validation_center') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-check-circle me-2"></i>Validation</span>
+                            {% if stats.prelevements_a_valider > 0 %}
+                            <span class="badge bg-warning rounded-pill">{{ stats.prelevements_a_valider }}</span>
+                            {% endif %}
+                        </a>
+                        {% endif %}
+                        
+                        <a href="{{ url_for('main.forecasts') }}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-cloud-sun me-2"></i>Prévisions
+                        </a>
+                        
+                        <a href="{{ url_for('main.alerts') }}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-exclamation-triangle me-2"></i>Alertes
+                        </a>
+                        
+                        {% if permissions.can_view_all_services %}
+                        <a href="{{ url_for('dgm.hierarchical_reports') }}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-graph-up me-2"></i>Rapports
+                        </a>
+                        {% endif %}
+                        
+                        <a href="{{ url_for('dgm.export_my_scope') }}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-download me-2"></i>Export données
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Météo locale -->
+            {% if agent.station %}
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-thermometer-half"></i> {{ agent.station.name }}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <!-- Ici vous pourriez afficher les dernières données météo de la station de l'agent -->
+                    <p class="text-center text-muted">
+                        <i class="bi bi-cloud" style="font-size: 2rem;"></i><br>
+                        Conditions locales
+                    </p>
+                    <div class="text-center">
+                        <a href="{{ url_for('main.historical') }}?station={{ agent.station.id }}" class="btn btn-sm btn-success">
+                            <i class="bi bi-graph-up"></i> Voir l'historique
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Actualisation automatique des stats
+    setInterval(function() {
+        fetch('{{ url_for("dgm.get_dashboard_stats") }}')
+            .then(response => response.json())
+            .then(data => {
+                // Mettre à jour les statistiques
+                updateDashboardStats(data);
+            })
+            .catch(error => console.error('Erreur actualisation:', error));
+    }, 300000); // 5 minutes
+    
+    // Animations d'entrée
+    animateCards();
+});
+
+function validatePrelevement(id) {
+    if (confirm('Valider ce prélèvement ?')) {
+        fetch(`{{ url_for("dgm.validate_prelevement", id=0) }}`.replace('0', id), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erreur: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Erreur de connexion');
+        });
+    }
+}
+
+function updateDashboardStats(data) {
+    // Mettre à jour les valeurs dans les cartes stats
+    Object.keys(data).forEach(key => {
+        const element = document.querySelector(`[data-stat="${key}"]`);
+        if (element) {
+            element.textContent = data[key];
+        }
+    });
+}
+
+function animateCards() {
+    const cards = document.querySelectorAll('.stat-card, .card');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            card.style.transition = 'all 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+}
+
+// Gestion des notifications en temps réel (à développer)
+function initializeNotifications() {
+    // WebSocket ou polling pour les notifications
+    // Notification des nouveaux prélèvements, validations, etc.
+}
+</script>
+{% endblock %}

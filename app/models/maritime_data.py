@@ -29,11 +29,11 @@ class MaritimeData(db.Model):
     surface_current_speed = db.Column(db.Float)  # Vitesse du courant en nœuds
     surface_current_direction = db.Column(db.Float)  # Direction du courant
     
-    # Relation avec la station
-    station = db.relationship('WeatherStation', backref='maritime_data')
+    # Relation avec la station - Utiliser une relation lazy
+    station = db.relationship('WeatherStation', backref=db.backref('maritime_data_records', lazy='dynamic'))
     
     def __repr__(self):
-        return f'<MaritimeData {self.station.name} - Sea State {self.sea_state}>'
+        return f'<MaritimeData Station:{self.station_id} - Sea State {self.sea_state}>'
     
     def to_dict(self):
         """Convertit l'objet en dictionnaire"""

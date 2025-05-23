@@ -1,0 +1,748 @@
+<!-- app/templates/dgm/dashboard_directeur_general.html -->
+{% extends "base.html" %}
+
+{% block title %}Tableau de Bord - Directeur Général DGM{% endblock %}
+
+{% block extra_css %}
+<style>
+    .executive-dashboard {
+        background: linear-gradient(135deg, #1e3c72, #2a5298);
+        color: white;
+        padding: 2rem;
+        border-radius: 10px;
+        margin-bottom: 30px;
+    }
+    
+    .division-card {
+        border-left: 4px solid var(--primary-color);
+        transition: all 0.3s ease;
+    }
+    
+    .division-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .kpi-card {
+        text-align: center;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .kpi-value {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+    
+    .kpi-label {
+        font-size: 0.9rem;
+        opacity: 0.8;
+    }
+    
+    .trend-up { color: #28a745; }
+    .trend-down { color: #dc3545; }
+    .trend-stable { color: #6c757d; }
+    
+    .activity-timeline {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- En-tête Exécutif -->
+<div class="executive-dashboard">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1><i class="bi bi-building"></i> Direction Générale de la Météorologie</h1>
+            <p class="lead">Tableau de bord stratégique - {{ current_user.agent.user.username }}</p>
+            <p>Situation au {{ moment().format('DD MMMM YYYY à HH:mm') }}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="badge bg-light text-dark p-3">
+                <div class="fs-4">{{ stats.divisions_actives }}</div>
+                <div>Divisions Opérationnelles</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- KPI Nationaux -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="kpi-card bg-primary text-white">
+            <div class="kpi-value">{{ stats.stations_operationnelles }}</div>
+            <div class="kpi-label">Stations Opérationnelles</div>
+            <div class="mt-2">
+                <span class="trend-up"><i class="bi bi-arrow-up"></i> +2 ce mois</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card bg-success text-white">
+            <div class="kpi-value">{{ stats.agents_actifs }}</div>
+            <div class="kpi-label">Agents DGM Actifs</div>
+            <div class="mt-2">
+                <span class="trend-stable"><i class="bi bi-dash"></i> Stable</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card bg-info text-white">
+            <div class="kpi-value">{{ stats.bulletins_diffuses }}</div>
+            <div class="kpi-label">Bulletins Diffusés</div>
+            <div class="mt-2">
+                <span class="trend-up"><i class="bi bi-arrow-up"></i> +15%</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card bg-warning text-dark">
+            <div class="kpi-value">{{ stats.alertes_emises }}</div>
+            <div class="kpi-label">Alertes Émises</div>
+            <div class="mt-2">
+                <span class="trend-down"><i class="bi bi-arrow-down"></i> -8%</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Vue d'ensemble des Divisions -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-diagram-3"></i> État des Divisions</h5>
+            </div>
+            <div class="card-body">
+                {% for division in divisions %}
+                <div class="division-card card mb-3">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <h6 class="mb-1">{{ division.nom }}</h6>
+                                <small class="text-muted">{{ division.nombre_services }} services • {{ division.nombre_agents }} agents</small>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    {% if division.performance >= 90 %}
+                                    <span class="badge bg-success p-2">Excellent</span>
+                                    {% elif division.performance >= 75 %}
+                                    <span class="badge bg-primary p-2">Satisfaisant</span>
+                                    {% elif division.performance >= 60 %}
+                                    <span class="badge bg-warning p-2">À améliorer</span>
+                                    {% else %}
+                                    <span class="badge bg-danger p-2">Critique</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-3 text-end">
+                                <a href="{{ url_for('dgm.division_detail', id=division.id) }}" 
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-eye"></i> Détails
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <!-- Indicateurs rapides de la division -->
+                        <div class="row mt-3">
+                            <div class="col-4 text-center">
+                                <div class="fs-6 fw-bold">{{ division.activites_en_cours }}</div>
+                                <small class="text-muted">Activités en cours</small>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div class="fs-6 fw-bold">{{ division.rapports_en_attente }}</div>
+                                <small class="text-muted">Rapports en attente</small>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div class="fs-6 fw-bold">{{ division.budget_consomme }}%</div>
+                                <small class="text-muted">Budget consommé</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-bell"></i> Alertes et Notifications</h5>
+            </div>
+            <div class="card-body">
+                <div class="activity-timeline">
+                    {% for alerte in alertes_direction %}
+                    <div class="d-flex align-items-start mb-3">
+                        <div class="flex-shrink-0">
+                            {% if alerte.priorite == 'critique' %}
+                            <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+                            {% elif alerte.priorite == 'haute' %}
+                            <i class="bi bi-exclamation-circle-fill text-warning"></i>
+                            {% else %}
+                            <i class="bi bi-info-circle-fill text-info"></i>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-1">{{ alerte.titre }}</h6>
+                            <p class="mb-1 small">{{ alerte.description }}</p>
+                            <small class="text-muted">{{ alerte.source }} • {{ alerte.date_relative }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('dgm.notifications') }}" class="btn btn-outline-info btn-sm">
+                        Voir toutes les notifications
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Réunions et agenda -->
+        <div class="card mt-3">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="bi bi-calendar3"></i> Agenda du Jour</h5>
+            </div>
+            <div class="card-body">
+                {% for reunion in agenda_jour %}
+                <div class="d-flex align-items-center mb-2">
+                    <div class="flex-shrink-0">
+                        <span class="badge bg-primary">{{ reunion.heure }}</span>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="fw-bold">{{ reunion.titre }}</div>
+                        <small class="text-muted">{{ reunion.participants }}</small>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('dgm.agenda') }}" class="btn btn-outline-secondary btn-sm">
+                        Agenda complet
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Graphiques et analyses -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Performance Mensuelle des Divisions</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="performanceDivisionsChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Évolution du Réseau d'Observation</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="reseauObservationChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Actions rapides -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="bi bi-lightning-charge"></i> Actions Rapides</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-2">
+                        <a href="{{ url_for('dgm.validation_rapports') }}" 
+                           class="btn btn-outline-primary w-100 mb-2">
+                            <i class="bi bi-file-text" style="font-size: 2rem;"></i>
+                            <div>Valider Rapports</div>
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="{{ url_for('dgm.gestion_personnel') }}" 
+                           class="btn btn-outline-success w-100 mb-2">
+                            <i class="bi bi-people" style="font-size: 2rem;"></i>
+                            <div>Gestion Personnel</div>
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="{{ url_for('dgm.budget_divisions') }}" 
+                           class="btn btn-outline-warning w-100 mb-2">
+                            <i class="bi bi-calculator" style="font-size: 2rem;"></i>
+                            <div>Suivi Budget</div>
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="{{ url_for('dgm.planification_strategique') }}" 
+                           class="btn btn-outline-info w-100 mb-2">
+                            <i class="bi bi-graph-up" style="font-size: 2rem;"></i>
+                            <div>Plan Stratégique</div>
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="{{ url_for('dgm.cooperation_internationale') }}" 
+                           class="btn btn-outline-secondary w-100 mb-2">
+                            <i class="bi bi-globe" style="font-size: 2rem;"></i>
+                            <div>Coopération Int.</div>
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="{{ url_for('dgm.parametres_systeme') }}" 
+                           class="btn btn-outline-dark w-100 mb-2">
+                            <i class="bi bi-gear" style="font-size: 2rem;"></i>
+                            <div>Paramètres</div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Graphique performance des divisions
+    const perfCtx = document.getElementById('performanceDivisionsChart').getContext('2d');
+    new Chart(perfCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ divisions_noms|tojson }},
+            datasets: [{
+                label: 'Performance (%)',
+                data: {{ divisions_performance|tojson }},
+                backgroundColor: [
+                    'rgba(54, 162, 235, 0.7)',
+                    'rgba(75, 192, 192, 0.7)',
+                    'rgba(255, 205, 86, 0.7)',
+                    'rgba(255, 99, 132, 0.7)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    });
+    
+    // Graphique évolution réseau
+    const reseauCtx = document.getElementById('reseauObservationChart').getContext('2d');
+    new Chart(reseauCtx, {
+        type: 'line',
+        data: {
+            labels: {{ mois_derniers|tojson }},
+            datasets: [{
+                label: 'Stations Opérationnelles',
+                data: {{ evolution_stations|tojson }},
+                borderColor: 'rgba(75, 192, 192, 1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+});
+</script>
+{% endblock %}
+
+<!-- app/templates/dgm/dashboard_directeur_division.html -->
+{% extends "base.html" %}
+
+{% block title %}Tableau de Bord - Direction {{ division.nom }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .division-header {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 2rem;
+        border-radius: 10px;
+        margin-bottom: 30px;
+    }
+    
+    .service-card {
+        border-left: 4px solid #007bff;
+        margin-bottom: 20px;
+    }
+    
+    .metric-card {
+        text-align: center;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .service-performance {
+        height: 10px;
+        background-color: #e9ecef;
+        border-radius: 5px;
+        overflow: hidden;
+    }
+    
+    .performance-bar {
+        height: 100%;
+        transition: width 0.3s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- En-tête Division -->
+<div class="division-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1><i class="bi bi-building"></i> {{ division.nom }}</h1>
+            <p class="lead">{{ division.description }}</p>
+            <p>Directeur: {{ current_user.agent.user.username }} • {{ services_count }} Services • {{ agents_count }} Agents</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('dgm.rapport_division', id=division.id) }}" 
+               class="btn btn-light btn-lg">
+                <i class="bi bi-file-earmark-text"></i> Rapport Mensuel
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Métriques de la Division -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="metric-card bg-primary text-white">
+            <h3>{{ stats.activites_en_cours }}</h3>
+            <p>Activités en Cours</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="metric-card bg-success text-white">
+            <h3>{{ stats.objectifs_atteints }}%</h3>
+            <p>Objectifs Atteints</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="metric-card bg-warning text-dark">
+            <h3>{{ stats.validations_attente }}</h3>
+            <p>Validations en Attente</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="metric-card bg-info text-white">
+            <h3>{{ stats.budget_utilise }}%</h3>
+            <p>Budget Utilisé</p>
+        </div>
+    </div>
+</div>
+
+<!-- Services de la Division -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-diagram-2"></i> Services sous ma Responsabilité</h5>
+            </div>
+            <div class="card-body">
+                {% for service in services %}
+                <div class="service-card card">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <h6 class="mb-1">{{ service.nom }}</h6>
+                                <small class="text-muted">
+                                    Chef: {{ service.chef.user.username if service.chef else 'Non assigné' }} • 
+                                    {{ service.nombre_agents }} agents
+                                </small>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="service-performance">
+                                    <div class="performance-bar bg-{% if service.performance >= 80 %}success{% elif service.performance >= 60 %}warning{% else %}danger{% endif %}" 
+                                         style="width: {{ service.performance }}%"></div>
+                                </div>
+                                <small class="text-muted">Performance: {{ service.performance }}%</small>
+                            </div>
+                            <div class="col-md-3 text-end">
+                                <a href="{{ url_for('dgm.service_detail', id=service.id) }}" 
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-eye"></i> Détails
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <!-- Indicateurs du service -->
+                        <div class="row mt-3">
+                            <div class="col-4">
+                                <div class="text-center">
+                                    <div class="fw-bold">{{ service.taches_completees }}</div>
+                                    <small class="text-muted">Tâches Complétées</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="text-center">
+                                    <div class="fw-bold">{{ service.rapports_en_attente }}</div>
+                                    <small class="text-muted">Rapports en Attente</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="text-center">
+                                    <div class="fw-bold">{{ service.alertes_actives }}</div>
+                                    <small class="text-muted">Alertes Actives</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Validations en attente -->
+        <div class="card mb-3">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="bi bi-clock"></i> Validations en Attente</h5>
+            </div>
+            <div class="card-body">
+                {% for validation in validations_attente %}
+                <div class="d-flex align-items-center mb-3">
+                    <div class="flex-shrink-0">
+                        <span class="badge bg-{% if validation.priorite == 'haute' %}danger{% elif validation.priorite == 'moyenne' %}warning{% else %}secondary{% endif %}">
+                            {{ validation.type }}
+                        </span>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="fw-bold">{{ validation.titre }}</div>
+                        <small class="text-muted">{{ validation.service }} • {{ validation.date_relative }}</small>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <a href="{{ url_for('dgm.valider_document', id=validation.id) }}" 
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-check"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <div class="text-center">
+                    <a href="{{ url_for('dgm.toutes_validations') }}" class="btn btn-outline-warning btn-sm">
+                        Voir Toutes
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Planification -->
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-calendar-week"></i> Planning de la Semaine</h5>
+            </div>
+            <div class="card-body">
+                {% for activite in planning_semaine %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span class="fw-bold">{{ activite.nom }}</span>
+                        <span class="badge bg-{% if activite.statut == 'en_cours' %}primary{% elif activite.statut == 'planifiee' %}secondary{% else %}success{% endif %}">
+                            {{ activite.statut }}
+                        </span>
+                    </div>
+                    <small class="text-muted">
+                        {{ activite.date_debut }} - {{ activite.service_responsable }}
+                    </small>
+                </div>
+                {% endfor %}
+                
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('dgm.planning_division') }}" class="btn btn-outline-info btn-sm">
+                        Planning Complet
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Actions et outils -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="bi bi-tools"></i> Outils de Gestion Divisionnaire</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-2">
+                        <a href="{{ url_for('dgm.gestion_services') }}" class="btn btn-outline-primary w-100 mb-2">
+                            <i class="bi bi-diagram-2" style="font-size: 1.5rem;"></i>
+                            <div>Gérer Services</div>
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="{{ url_for('dgm.affectation_agents') }}" class="btn btn-outline-success w-100 mb-2">
+                            <i class="bi bi-person-gear" style="font-size: 1.5rem;"></i>
+                            <div>Affecter Agents</div>
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="{{ url_for('dgm.planifier_activites') }}" class="btn btn-outline-info w-100 mb-2">
+                            <i class="bi bi-calendar-plus" style="font-size: 1.5rem;"></i>
+                            <div>Planifier</div>
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="{{ url_for('dgm.budget_division') }}" class="btn btn-outline-warning w-100 mb-2">
+                            <i class="bi bi-currency-dollar" style="font-size: 1.5rem;"></i>
+                            <div>Budget</div>
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="{{ url_for('dgm.formation_agents') }}" class="btn btn-outline-secondary w-100 mb-2">
+                            <i class="bi bi-mortarboard" style="font-size: 1.5rem;"></i>
+                            <div>Formations</div>
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="{{ url_for('dgm.rapports_division') }}" class="btn btn-outline-dark w-100 mb-2">
+                            <i class="bi bi-file-earmark-bar-graph" style="font-size: 1.5rem;"></i>
+                            <div>Rapports</div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+<!-- app/templates/dgm/dashboard_chef_service.html -->
+{% extends "base.html" %}
+
+{% block title %}Tableau de Bord - {{ service.nom }}{% endblock %}
+
+{% block content %}
+<!-- En-tête Service -->
+<div class="card bg-gradient-primary text-white mb-4">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1><i class="bi bi-gear"></i> {{ service.nom }}</h1>
+                <p class="lead">{{ service.description }}</p>
+                <p>Chef de Service: {{ current_user.agent.user.username }} • 
+                   Division: {{ service.division.nom }} • 
+                   {{ agents_count }} Agents</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="{{ url_for('dgm.rapport_service') }}" class="btn btn-light btn-lg">
+                    <i class="bi bi-file-text"></i> Rapport Mensuel
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Métriques du Service -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-primary">{{ stats.activites_actives }}</h3>
+                <p>Activités Actives</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-success">{{ stats.taches_completees }}</h3>
+                <p>Tâches Complétées</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-warning">{{ stats.prelevements_attente }}</h3>
+                <p>Prélèvements à Valider</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Équipe et activités -->
+<div class="row">
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-people"></i> Mon Équipe</h5>
+            </div>
+            <div class="card-body">
+                {% for agent in agents_service %}
+                <div class="d-flex align-items-center mb-3">
+                    <div class="flex-shrink-0">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                             style="width: 40px; height: 40px;">
+                            {{ agent.user.username[0].upper() }}
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="fw-bold">{{ agent.user.username }}</div>
+                        <small class="text-muted">{{ agent.fonction }} • {{ agent.station.name if agent.station else 'Bureau' }}</small>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <span class="badge bg-{% if agent.statut_activite == 'actif' %}success{% elif agent.statut_activite == 'mission' %}warning{% else %}secondary{% endif %}">
+                            {{ agent.statut_activite }}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-list-check"></i> Tâches Prioritaires</h5>
+            </div>
+            <div class="card-body">
+                {% for tache in taches_prioritaires %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span class="fw-bold">{{ tache.nom }}</span>
+                        <span class="badge bg-{% if tache.priorite == 'haute' %}danger{% elif tache.priorite == 'moyenne' %}warning{% else %}secondary{% endif %}">
+                            {{ tache.priorite }}
+                        </span>
+                    </div>
+                    <div class="progress mt-2" style="height: 5px;">
+                        <div class="progress-bar" style="width: {{ tache.avancement }}%"></div>
+                    </div>
+                    <small class="text-muted">{{ tache.responsable }} • {{ tache.echeance }}</small>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

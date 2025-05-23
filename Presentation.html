@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GabonMétéo+ - Présentation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1e88e5;
+            --secondary-color: #43a047;
+            --accent-color: #ffb300;
+            --gradient-bg: linear-gradient(135deg, #1e88e5 0%, #43a047 100%);
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+        
+        .hero-section {
+            background: var(--gradient-bg);
+            color: white;
+            padding: 100px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="40" r="1.5" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="80" r="1" fill="rgba(255,255,255,0.1)"/></svg>');
+            opacity: 0.3;
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .feature-icon {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+        
+        .feature-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            height: 100%;
+            border: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .stats-section {
+            background: #f8f9fa;
+            padding: 80px 0;
+        }
+        
+        .stat-number {
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .architecture-diagram {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .tech-badge {
+            background: var(--gradient-bg);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            margin: 5px;
+            display: inline-block;
+            font-size: 0.9rem;
+        }
+        
+        .timeline-item {
+            border-left: 3px solid var(--primary-color);
+            padding-left: 20px;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            top: 0;
+            width: 12px;
+            height: 12px;
+            background: var(--primary-color);
+            border-radius: 50%;
+        }
+        
+        .section-title {
+            color: var(--primary-color);
+            font-weight: bold;
+            margin-bottom: 3rem;
+            position: relative;
+            text-align: center;
+        }
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: var(--accent-color);
+        }
+        
+        .role-badge {
+            padding: 8px 15px;
+            border-radius: 25px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .role-superadmin { background: #dc3545; color: white; }
+        .role-admin { background: #fd7e14; color: white; }
+        .role-agent { background: #20c997; color: white; }
+        .role-user { background: #6c757d; color: white; }
+        
+        .contact-card {
+            background: var(--gradient-bg);
+            color: white;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Section Hero -->
+    <section class="hero-section">
+        <div class="container hero-content">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h1 class="display-3 fw-bold mb-4">
+                        <i class="bi bi-cloud-sun me-3"></i>GabonMétéo+
+                    </h1>
+                    <p class="lead fs-4 mb-4">
+                        Solution météorologique intégrée pour la Direction Générale de Météorologie du Gabon
+                    </p>
+                    <p class="fs-5 mb-5">
+                        Une plateforme moderne qui révolutionne la gestion des données météorologiques, 
+                        des prévisions et des services sectoriels au Gabon.
+                    </p>
+                    <div class="d-flex flex-wrap gap-3">
+                        <span class="badge bg-light text-dark p-3 fs-6">
+                            <i class="bi bi-check-circle me-2"></i>Interface moderne
+                        </span>
+                        <span class="badge bg-light text-dark p-3 fs-6">
+                            <i class="bi bi-shield-check me-2"></i>Sécurisé
+                        </span>
+                        <span class="badge bg-light text-dark p-3 fs-6">
+                            <i class="bi bi-graph-up me-2"></i>Évolutif
+                        </span>
+                    </div>
+                </div>
+                <div class="col-lg-4 text-center">
+                    <div class="bg-white bg-opacity-10 rounded-circle p-5 d-inline-block">
+                        <i class="bi bi-cloud-sun display-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section Problématique -->
+    <section class="py-5">
+        <div class="container">
+            <h2 class="section-title">Problématique & Solution</h2>
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="card border-danger h-100">
+                        <div class="card-header bg-danger text-white">
+                            <h4><i class="bi bi-exclamation-triangle me-2"></i>Défis identifiés</h4>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled">
+                                <li class="mb-3">
+                                    <i class="bi bi-x-circle text-danger me-2"></i>
+                                    <strong>Gestion manuelle</strong> des prélèvements météorologiques
+                                </li>
+                                <li class="mb-3">
+                                    <i class="bi bi-x-circle text-danger me-2"></i>
+                                    <strong>Absence de validation</strong> systématique des données
+                                </li>
+                                <li class="mb-3">
+                                    <i class="bi bi-x-circle text-danger me-2"></i>
+                                    <strong>Interfaces obsolètes</strong> et peu intuitives
+                                </li>
+                                <li class="mb-3">
+                                    <i class="bi bi-x-circle text-danger me-2"></i>
+                                    <strong>Manque de centralisation</strong> des données
+                                </li>
+                                <li class="mb-3">
+                                    <i class="bi bi-x-circle text-danger me-2"></i>
+                                    <strong>Services sectoriels</strong> non intégrés
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card border-success h-100">
+                        <div class="card-header bg-success text-white">
+                            <h4><i class="bi bi-check-circle me-2"></i>Notre Solution</h4>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled">
+                                <li class="mb-3">
+                                    <i class="bi bi-check-circle text-success me-2"></i>
+                                    <strong>Plateforme web moderne</strong> avec interface intuitive
+                                </li>
+                                <li class="mb-3">
+                                    <i class="bi bi-check-circle text-success me-2"></i>
+                                    <strong>Workflow de validation</strong> à plusieurs niveaux
+                                </li>
+                                <li class="mb-3">
+                                    <i class="bi bi-check-circle text-success me-2"></i>
+                                    <strong>Gestion hiérarchique</strong> des utilisateurs et droits
+                                </li>
+                                <li class="mb-3">
+                                    <i class="bi bi-check-circle text-success me-2"></i>
+                                    <strong>Centralisation complète</strong> des données météorologiques
+                                </li>
+                                <li class="mb-3">
+                                    <i class="bi bi-check-circle text-success me-2"></i>
+                                    <strong>Modules sectoriels</strong> intégrés (Agriculture, Aviation, Maritime)
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section Fonctionnalités -->
+    <section class="py-5 bg-light">
+        <div class="container">
+            <h2 class="section-title">Fonctionnalités Clés</h2>
+            <div class="row g-4">
+                <div class="col-lg-4 col-md-6">
+                    <div class="card feature-card">
+                        <div class="card-body text-center p-4">
+                            <i class="bi bi-clipboard-data feature-icon"></i>
+                            <h4>Gestion des Prélèvements</h4>
+                            <p>Interface moderne pour la saisie des données météorologiques par les agents DGM avec validation en temps réel.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="card feature-card">
+                        <div class="card-body text-center p-4">
+                            <i class="bi bi-shield-check feature-icon"></i>
+                            <h4>Validation Multi-niveaux</h4>
+                            <p>Système de validation sophistiqué avec contrôles automatiques et validation manuelle par les administrateurs.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="card feature-card">
+                        <div class="card-body text-center p-4">
+                            <i class="bi bi-people feature-icon"></i>
+                            <h4>Gestion Hiérarchique</h4>
+                            <p>Système de rôles complet : SuperAdmin, Admin, Agent DGM, et Utilisateur avec permissions granulaires.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="card feature-card">
+                        <div class="card-body text-center p-4">
+                            <i class="bi bi-graph-up feature-icon"></i>
+                            <h4>Visualisations Avancées</h4>
+                            <p>Graphiques interactifs, cartes météorologiques et tableaux de bord personnalisés pour chaque type d'utilisateur.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="card feature-card">
+                        <div class="card-body text-center p-4">
+                            <i class="bi bi-grid-3x3-gap feature-icon"></i>
+                            <h4>Modules Sectoriels</h4>
+                            <p>Services spécialisés pour l'agriculture, l'aviation, le maritime avec données et conseils adaptés.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="card feature-card">
+                        <div class="card-body text-center p-4">
+                            <i class="bi bi-gear feature-icon"></i>
+                            <h4>Administration Système</h4>
+                            <p>Interface SuperAdmin pour la configuration globale, sauvegardes, journaux et gestion avancée du système.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section Architecture -->
+    <section class="py-5">
+        <div class="container">
+            <h2 class="section-title">Architecture Technique</h2>
+            <div class="architecture-diagram mb-5">
+                <div class="row">
+                    <div class="col-lg-4 text-center mb-4">
+                        <h4><i class="bi bi-display text-primary me-2"></i>Frontend</h4>
+                        <div class="tech-badge">Bootstrap 5</div>
+                        <div class="tech-badge">JavaScript ES6</div>
+                        <div class="tech-badge">Chart.js</div>
+                        <div class="tech-badge">Leaflet.js</div>
+                    </div>
+                    <div class="col-lg-4 text-center mb-4">
+                        <h4><i class="bi bi-server text-primary me-2"></i>Backend</h4>
+                        <div class="tech-badge">Python 3.9+</div>
+                        <div class="tech-badge">Flask 2.3</div>
+                        <div class="tech-badge">SQLAlchemy</div>
+                        <div class="tech-badge">Flask-Login</div>
+                    </div>
+                    <div class="col-lg-4 text-center mb-4">
+                        <h4><i class="bi bi-database text-primary me-2"></i>Base de Données</h4>
+                        <div class="tech-badge">SQLite (Dev)</div>
+                        <div class="tech-badge">PostgreSQL (Prod)</div>
+                        <div class="tech-badge">Relations Optimisées</div>
+                        <div class="tech-badge">Migrations</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-lg-6">
+                    <h4>Points Forts Techniques</h4>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Architecture MVC respectée</li>
+                        <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>ORM SQLAlchemy pour la sécurité</li>
+                        <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Templates Jinja2 modulaires</li>
+                        <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Interface responsive mobile-first</li>
+                        <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Gestion d'état avec sessions sécurisées</li>
+                    </ul>
+                </div>
+                <div class="col-lg-6">
+                    <h4>Sécurité & Performance</h4>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="bi bi-shield-check text-primary me-2"></i>Contrôle d'accès basé sur les rôles (RBAC)</li>
+                        <li class="mb-2"><i class="bi bi-shield-check text-primary me-2"></i>Protection contre les injections SQL</li>
+                        <li class="mb-2"><i class="bi bi-shield-check text-primary me-2"></i>Validation des données côté serveur</li>
+                        <li class="mb-2"><i class="bi bi-shield-check text-primary me-2"></i>Journalisation des actions sensibles</li>
+                        <li class="mb-2"><i class="bi bi-shield-check text-primary me-2"></i>Optimisation des requêtes base de données</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section Statistiques -->
+    <section class="stats-section">
+        <div class="container">
+            <h2 class="section-title text-dark">Projet en Chiffres</h2>
+            <div class="row text-center">
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="stat-number">15+</div>
+                    <h5>Modules Fonctionnels</h5>
+                    <p class="text-muted">Gestion complète de tous les aspects météorologiques</p>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="stat-number">4</div>
+                    <h5>Niveaux d'Utilisateurs</h5>
+                    <p class="text-muted">SuperAdmin, Admin, Agent DGM, Utilisateur</p>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="stat-number">25+</div>
+                    <h5>Interfaces Utilisateur</h5>
+                    <p class="text-muted">Templates responsives et optimisées</p>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="stat-number">100%</div>
+                    <h5>Sécurisé</h5>
+                    <p class="text-muted">Authentification et autorisation complètes</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section Rôles et Utilisateurs -->
+    <section class="py-5">
+        <div class="container">
+            <h2 class="section-title">Système de Rôles</h2>
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-danger text-white">
+                            <h4><i class="bi bi-shield-lock me-2"></i>SuperAdmin</h4>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="bi bi-check me-2"></i>Configuration système globale</li>
+                                <li class="mb-2"><i class="bi bi-check me-2"></i>Gestion des rôles utilisateurs</li>
+                                <li class="mb-2"><i class="bi bi-check me-2"></i>Journaux système et sauvegardes</li>
+                                <li class="mb-2"><i class="bi bi-check me-2"></i>Import/Export données en masse</li>
+                                <li class="mb-2"><i class="bi bi-check me-2"></i>Maintenance et monitoring</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-warning text-dark">
+                            <h4><i class="bi bi-gear me-2"></i>Admin</h4>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="bi bi-check me-2"></i>Gestion des utilisateurs</li>
+                                <li class="mb-2"><i class="bi bi-check me-2"></i>Validation des prélèvements</li>
+                                <li class="mb-2"><i class="bi bi-check me-2"></i>Gestion des agents DGM</li>
+                                <li class="mb-2"><i class="bi bi-check me-2"></i>Configuration des stations</li>
+                                <li class="mb-2"><i class="bi bi-check me-2"></i>Rapports et statistiques</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-info text-white">
+                            <h4><i class="bi bi-person-badge me-2"></i>Agent DGM</h4>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="bi bi-check me-2"></i>Saisie des prélèvements météo</li>
+                                <li class="mb-2"><i class="bi bi-check me-2"></i>Consultation de ses données</li>
+                                <li class="mb-2"><i class="bi bi-check me-2"></i>Profil agent personnalisé</li>
+                                <li class="mb-2"><i class="bi bi-check me-2"></i>Historique des prélèvements</li>
+                                <li class="mb-2"><i class="bi bi-check me-2"></i>Notifications de validation</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-secondary text-white">
+                            <h4><i class="bi bi-person me-2"></i>Utilisateur</h4>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="bi bi-check me-2"></i>Consultation des prévisions</li>
+                                <li class="mb-2"><i class="bi bi-check me-2"></i>Données météorologiques publiques</li>
+                                <li class="mb-2"><i class="bi bi-check me-2"></i>Alertes météorologiques</li>
+                                <li class="mb-2"><i class="bi bi-check me-2"></i>Services sectoriels</li>
+                                <li class="mb-2"><i class="bi bi-check me-2"></i>Historiques et statistiques</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section Roadmap -->
+    <section class="py-5 bg-light">
+        <div class="container">
+            <h2 class="section-title">Roadmap & Évolutions</h2>
+            <div class="row">
+                <div class="col-lg-6">
+                    <h4 class="text-success mb-4"><i class="bi bi-check-circle me-2"></i>Version 1.0 - Livrée</h4>
+                    <div class="timeline-item">
+                        <h5>✅ Interface complète agents DGM</h5>
+                        <p>Système complet de saisie et gestion des prélèvements</p>
+                    </div>
+                    <div class="timeline-item">
+                        <h5>✅ Validation multi-niveaux</h5>
+                        <p>Workflow de validation avec contrôles automatiques</p>
+                    </div>
+                    <div class="timeline-item">
+                        <h5>✅ Administration SuperAdmin</h5>
+                        <p>Interface complète de gestion système avancée</p>
+                    </div>
+                    <div class="timeline-item">
+                        <h5>✅ Modules sectoriels</h5>
+                        <p>Agriculture, Aviation, Maritime intégrés</p>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <h4 class="text-primary mb-4"><i class="bi bi-clock me-2"></i>Versions Futures</h4>
+                    <div class="timeline-item">
+                        <h5>🔄 Version 1.1 - API REST</h5>
+                        <p>API complète pour intégrations externes et applications mobiles</p>
+                    </div>
+                    <div class="timeline-item">
+                        <h5>📱 Version 1.2 - App Mobile</h5>
+                        <p>Application mobile native pour les agents de terrain</p>
+                    </div>
+                    <div class="timeline-item">
+                        <h5>🤖 Version 1.3 - IA Prédictive</h5>
+                        <p>Intelligence artificielle pour prédictions météorologiques avancées</p>
+                    </div>
+                    <div class="timeline-item">
+                        <h5>🌐 Version 2.0 - Intégration Régionale</h5>
+                        <p>Connexion avec les services météorologiques régionaux</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section Contact/Auteur -->
+    <section class="py-5">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="contact-card">
+                        <h2 class="mb-4">Solution Développée par</h2>
+                        <div class="row align-items-center">
+                            <div class="col-md-4 text-center mb-3">
+                                <i class="bi bi-person-circle display-1 mb-3"></i>
+                                <h4>Ahmed SOUARE</h4>
+                                <p class="mb-0">Développeur Principal</p>
+                            </div>
+                            <div class="col-md-8">
+                                <h5 class="mb-3">Expertise & Spécialisation</h5>
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <ul class="list-unstyled text-start">
+                                            <li class="mb-2">✨ Développement Web Full-Stack</li>
+                                            <li class="mb-2">🐍 Python/Flask Expert</li>
+                                            <li class="mb-2">🎨 UI/UX Design</li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <ul class="list-unstyled text-start">
+                                            <li class="mb-2">🔐 Sécurité Applications</li>
+                                            <li class="mb-2">📊 Systèmes de Gestion</li>
+                                            <li class="mb-2">☁️ Solutions Cloud</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="mt-4">
+                                    <h6>🎯 Solution Propriétaire pour la DGM Gabon</h6>
+                                    <p class="mb-0 opacity-75">Développement sur mesure adapté aux besoins spécifiques de la météorologie gabonaise</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container text-center">
+            <div class="row">
+                <div class="col-12">
+                    <h5 class="mb-3">
+                        <i class="bi bi-cloud-sun me-2"></i>GabonMétéo+
+                    </h5>
+                    <p class="mb-3">Solution météorologique intégrée pour la Direction Générale de Météorologie du Gabon</p>
+                    <div class="d-flex justify-content-center gap-4 mb-3">
+                        <span class="badge bg-primary">Version 1.0</span>
+                        <span class="badge bg-success">Production Ready</span>
+                        <span class="badge bg-warning text-dark">Support Inclus</span>
+                    </div>
+                    <hr class="my-4">
+                    <p class="mb-0">
+                        &copy; 2025 Ahmed SOUARE - Solution propriétaire pour la DGM Gabon
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Animation d'apparition au scroll
+        const observeElements = () => {
+            const elements = document.querySelectorAll('.card, .timeline-item');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, { threshold: 0.1 });
+            
+            elements.forEach(el => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(30px)';
+                el.style.transition = 'all 0.6s ease';
+                observer.observe(el);
+            });
+        };
+        
+        // Animation des compteurs statistiques
+        const animateCounters = () => {
+            const counters = document.querySelectorAll('.stat-number');
+            
+            counters.forEach(counter => {
+                const target = parseInt(counter.textContent.replace(/\D/g, ''));
+                let current = 0;
+                const increment = target / 100;
+                
+                const updateCounter = () => {
+                    if (current < target) {
+                        current += increment;
+                        counter.textContent = Math.ceil(current) + (counter.textContent.includes('+') ? '+' : '') + (counter.textContent.includes('%') ? '%' : '');
+                        requestAnimationFrame(updateCounter);
+                    } else {
+                        counter.textContent = counter.textContent.replace(/\d+/, target);
+                    }
+                };
+                
+                // Observer pour déclencher l'animation quand visible
+                const observer = new IntersectionObserver((entries) => {
+                    if (entries[0].isIntersecting) {
+                        updateCounter();
+                        observer.disconnect();
+                    }
+                });
+                
+                observer.observe(counter);
+            });
+        };
+        
+        // Effet de défilement fluide
+        const smoothScroll = () => {
+            const links = document.querySelectorAll('a[href^="#"]');
+            
+            links.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const target = document.querySelector(link.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth' });
+                    }
+                });
+            });
+        };
+        
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', () => {
+            observeElements();
+            animateCounters();
+            smoothScroll();
+        });
+        
+        // Parallax léger pour la section hero
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const parallax = document.querySelector('.hero-section');
+            if (parallax) {
+                const speed = scrolled * 0.5;
+                parallax.style.backgroundPosition = `center ${speed}px`;
+            }
+        });
+    </script>

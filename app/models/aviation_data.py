@@ -1,5 +1,5 @@
 # app/models/aviation_data.py
-from app.extensions import db  # ✅ Maintenant ça devrait marcher !
+from app.extensions import db
 from datetime import datetime
 
 class TurbulenceData(db.Model):
@@ -20,6 +20,9 @@ class TurbulenceData(db.Model):
     turbulence_index = db.Column(db.Float)
     turbulence_level = db.Column(db.String(50))
     wind_shear = db.Column(db.Float)
+    
+    # Relation avec la station - Utiliser une relation lazy
+    station = db.relationship('WeatherStation', backref=db.backref('turbulence_data', lazy='dynamic'))
     
     def __repr__(self):
         return f'<TurbulenceData {self.station_id} at {self.timestamp}>'

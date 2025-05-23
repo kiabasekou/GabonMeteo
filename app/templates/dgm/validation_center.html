@@ -1,0 +1,1139 @@
+<!-- app/templates/dgm/validation_center.html -->
+{% extends "base.html" %}
+
+{% block title %}Centre de Validation DGM{% endblock %}
+
+{% block extra_css %}
+<style>
+    .validation-header {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 30px 0;
+        margin-bottom: 30px;
+        border-radius: 10px;
+    }
+    
+    .validation-filters {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+        border: 1px solid #dee2e6;
+    }
+    
+    .urgency-indicator {
+        width: 8px;
+        height: 100%;
+        border-radius: 4px;
+        margin-right: 15px;
+    }
+    
+    .urgency-high {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+    }
+    
+    .urgency-medium {
+        background: linear-gradient(135deg, #ffc107, #e0a800);
+    }
+    
+    .urgency-low {
+        background: linear-gradient(135deg, #28a745, #1e7e34);
+    }
+    
+    .prelevement-card {
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+    
+    .prelevement-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .prelevement-card.selected {
+        border-color: #007bff;
+        box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+    }
+    
+    .agent-info {
+        background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
+    
+    .weather-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 10px;
+        margin: 15px 0;
+    }
+    
+    .weather-item {
+        text-align: center;
+        padding: 10px;
+        background: white;
+        border-radius: 5px;
+        border: 1px solid #e9ecef;
+    }
+    
+    .weather-value {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: var(--primary-color);
+    }
+    
+    .weather-label {
+        font-size: 0.8rem;
+        color: #6c757d;
+        text-transform: uppercase;
+    }
+    
+    .batch-actions {
+        position: sticky;
+        top: 20px;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    
+    .validation-timeline {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .timeline-entry {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .timeline-entry:last-child {
+        border-bottom: none;
+    }
+    
+    .timeline-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        font-size: 0.8rem;
+    }
+    
+    .status-pending {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .status-validated {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .status-rejected {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .quality-score {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+    
+    .quality-excellent {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .quality-good {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+    
+    .quality-average {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .quality-poor {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .data-comparison {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 10px 0;
+    }
+    
+    .comparison-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+    
+    .comparison-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .deviation-indicator {
+        font-weight: bold;
+    }
+    
+    .deviation-normal {
+        color: #28a745;
+    }
+    
+    .deviation-warning {
+        color: #ffc107;
+    }
+    
+    .deviation-critical {
+        color: #dc3545;
+    }
+    
+    .validation-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+    
+    .bulk-validation-panel {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        min-width: 300px;
+        transform: translateY(100px);
+        opacity: 0;
+        transition: all 0.3s ease;
+        z-index: 1000;
+    }
+    
+    .bulk-validation-panel.show {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    
+    .selection-counter {
+        background: var(--primary-color);
+        color: white;
+        border-radius: 50%;
+        width: 25px;
+        height: 25px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+    
+    @media (max-width: 768px) {
+        .weather-summary {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .bulk-validation-panel {
+            position: static;
+            transform: none;
+            opacity: 1;
+            margin-top: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .validation-actions {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header du centre de validation -->
+    <div class="validation-header text-center">
+        <div class="container">
+            <h1><i class="bi bi-shield-check"></i> Centre de Validation DGM</h1>
+            <p class="lead mb-0">Validation hiérarchique des prélèvements météorologiques</p>
+            <div class="row mt-3">
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center justify-content-center">
+                        <i class="bi bi-hourglass-split me-2"></i>
+                        <span>{{ pagination.total }} prélèvement(s) en attente</span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center justify-content-center">
+                        <i class="bi bi-people me-2"></i>
+                        <span>{{ permissions.services_access|length }} service(s) supervisé(s)</span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center justify-content-center">
+                        <i class="bi bi-geo-alt me-2"></i>
+                        <span>{{ permissions.stations_access|length }} station(s) sous contrôle</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtres et actions de masse -->
+    <div class="row">
+        <div class="col-lg-9">
+            <!-- Filtres -->
+            <div class="validation-filters">
+                <form method="GET" action="{{ url_for('dgm.validation_center') }}" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="service_id" class="form-label">Service</label>
+                        <select class="form-select" id="service_id" name="service_id">
+                            <option value="">Tous les services</option>
+                            {% for service in services %}
+                            <option value="{{ service.id }}" {% if request.args.get('service_id')|int == service.id %}selected{% endif %}>
+                                {{ service.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="station_id" class="form-label">Station</label>
+                        <select class="form-select" id="station_id" name="station_id">
+                            <option value="">Toutes les stations</option>
+                            {% for station in stations %}
+                            <option value="{{ station.id }}" {% if request.args.get('station_id')|int == station.id %}selected{% endif %}>
+                                {{ station.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="urgency" class="form-label">Urgence</label>
+                        <select class="form-select" id="urgency" name="urgency">
+                            <option value="">Toutes urgences</option>
+                            <option value="high" {% if request.args.get('urgency') == 'high' %}selected{% endif %}>Élevée (>24h)</option>
+                            <option value="medium" {% if request.args.get('urgency') == 'medium' %}selected{% endif %}>Moyenne (12-24h)</option>
+                            <option value="low" {% if request.args.get('urgency') == 'low' %}selected{% endif %}>Faible (<12h)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="bi bi-funnel"></i> Filtrer
+                        </button>
+                        <a href="{{ url_for('dgm.validation_center') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i>
+                        </a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Liste des prélèvements -->
+            {% if prelevements %}
+            <div id="prelevementsList">
+                {% for prelevement in prelevements %}
+                {% set urgency = 'high' if (now() - prelevement.timestamp).days >= 1 else 'medium' if (now() - prelevement.timestamp).seconds >= 43200 else 'low' %}
+                <div class="prelevement-card" data-id="{{ prelevement.id }}">
+                    <div class="d-flex">
+                        <!-- Indicateur d'urgence -->
+                        <div class="urgency-indicator urgency-{{ urgency }}"></div>
+                        
+                        <!-- Contenu principal -->
+                        <div class="flex-grow-1 p-3">
+                            <!-- En-tête avec sélection -->
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="form-check me-3">
+                                        <input class="form-check-input prelevement-select" type="checkbox" 
+                                               value="{{ prelevement.id }}" id="select{{ prelevement.id }}">
+                                        <label class="form-check-label" for="select{{ prelevement.id }}"></label>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1">
+                                            Prélèvement #{{ prelevement.id }}
+                                            <span class="quality-score quality-excellent">A+</span>
+                                        </h6>
+                                        <small class="text-muted">
+                                            {{ prelevement.date_prelevement.strftime('%d/%m/%Y à %H:%M') }}
+                                            • Il y a {{ (now() - prelevement.timestamp).days }}j {{ ((now() - prelevement.timestamp).seconds // 3600) }}h
+                                        </small>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex align-items-center">
+                                    <span class="badge bg-{{ 'danger' if urgency == 'high' else 'warning' if urgency == 'medium' else 'success' }} me-2">
+                                        {% if urgency == 'high' %}Urgent{% elif urgency == 'medium' %}Modéré{% else %}Récent{% endif %}
+                                    </span>
+                                    <button class="btn btn-sm btn-outline-primary" type="button" 
+                                            data-bs-toggle="collapse" data-bs-target="#details{{ prelevement.id }}">
+                                        <i class="bi bi-chevron-down"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Informations agent et station -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="agent-info">
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-person-badge me-2"></i>
+                                            <div>
+                                                <strong>{{ prelevement.agent.user.username }}</strong><br>
+                                                <small>{{ prelevement.agent.matricule }} • {{ prelevement.agent.fonction }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-geo-alt me-2 text-primary"></i>
+                                        <div>
+                                            <strong>{{ prelevement.station.name }}</strong><br>
+                                            <small class="text-muted">{{ prelevement.station.region }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Résumé météo -->
+                            <div class="weather-summary">
+                                <div class="weather-item">
+                                    <div class="weather-value">{{ prelevement.temperature|round(1) }}°C</div>
+                                    <div class="weather-label">Température</div>
+                                </div>
+                                {% if prelevement.humidity %}
+                                <div class="weather-item">
+                                    <div class="weather-value">{{ prelevement.humidity|round(1) }}%</div>
+                                    <div class="weather-label">Humidité</div>
+                                </div>
+                                {% endif %}
+                                {% if prelevement.precipitation %}
+                                <div class="weather-item">
+                                    <div class="weather-value">{{ prelevement.precipitation|round(1) }}mm</div>
+                                    <div class="weather-label">Précipitations</div>
+                                </div>
+                                {% endif %}
+                                {% if prelevement.wind_speed %}
+                                <div class="weather-item">
+                                    <div class="weather-value">{{ prelevement.wind_speed|round(1) }}km/h</div>
+                                    <div class="weather-label">Vent</div>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Détails complets (collapsible) -->
+                            <div class="collapse" id="details{{ prelevement.id }}">
+                                <hr>
+                                
+                                <!-- Analyse de qualité -->
+                                <div class="data-comparison">
+                                    <h6><i class="bi bi-graph-up"></i> Analyse de cohérence</h6>
+                                    
+                                    {% set station_avg_temp = 27.5 %}  <!-- À remplacer par la vraie moyenne -->
+                                    {% set temp_deviation = ((prelevement.temperature - station_avg_temp) / station_avg_temp * 100)|abs %}
+                                    
+                                    <div class="comparison-item">
+                                        <span>Température vs moyenne station</span>
+                                        <span class="deviation-indicator {% if temp_deviation <= 5 %}deviation-normal{% elif temp_deviation <= 15 %}deviation-warning{% else %}deviation-critical{% endif %}">
+                                            {% if prelevement.temperature > station_avg_temp %}+{% endif %}{{ (prelevement.temperature - station_avg_temp)|round(1) }}°C
+                                        </span>
+                                    </div>
+                                    
+                                    {% if prelevement.humidity %}
+                                    <div class="comparison-item">
+                                        <span>Humidité (plage normale 60-95%)</span>
+                                        <span class="deviation-indicator {% if 60 <= prelevement.humidity <= 95 %}deviation-normal{% else %}deviation-warning{% endif %}">
+                                            {% if 60 <= prelevement.humidity <= 95 %}Normale{% else %}Hors plage{% endif %}
+                                        </span>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if prelevement.pressure %}
+                                    <div class="comparison-item">
+                                        <span>Pression (plage normale 1000-1020 hPa)</span>
+                                        <span class="deviation-indicator {% if 1000 <= prelevement.pressure <= 1020 %}deviation-normal{% else %}deviation-warning{% endif %}">
+                                            {% if 1000 <= prelevement.pressure <= 1020 %}Normale{% else %}Atypique{% endif %}
+                                        </span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Notes de l'agent -->
+                                {% if prelevement.notes %}
+                                <div class="mt-3">
+                                    <h6><i class="bi bi-chat-left-text"></i> Notes de l'agent</h6>
+                                    <div class="bg-light p-3 rounded">
+                                        {{ prelevement.notes|nl2br }}
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Métadonnées -->
+                                <div class="mt-3">
+                                    <small class="text-muted">
+                                        <i class="bi bi-clock"></i> Enregistré le {{ prelevement.timestamp.strftime('%d/%m/%Y à %H:%M:%S') }}
+                                        • <i class="bi bi-laptop"></i> Agent: {{ prelevement.agent.service.name }}
+                                    </small>
+                                </div>
+                            </div>
+
+                            <!-- Actions de validation -->
+                            <div class="validation-actions">
+                                <button class="btn btn-success btn-sm" onclick="validateSingle({{ prelevement.id }})">
+                                    <i class="bi bi-check-circle"></i> Valider
+                                </button>
+                                <button class="btn btn-warning btn-sm" onclick="requestModification({{ prelevement.id }})">
+                                    <i class="bi bi-pencil"></i> Demander modification
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="rejectPrelevement({{ prelevement.id }})">
+                                    <i class="bi bi-x-circle"></i> Rejeter
+                                </button>
+                                <button class="btn btn-info btn-sm" onclick="viewHistory({{ prelevement.id }})">
+                                    <i class="bi bi-clock-history"></i> Historique
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('dgm.validation_center', page=pagination.prev_num, **request.args) }}">
+                            Précédent
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page in pagination.iter_pages() %}
+                        {% if page %}
+                            {% if page != pagination.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('dgm.validation_center', page=page, **request.args) }}">
+                                    {{ page }}
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('dgm.validation_center', page=pagination.next_num, **request.args) }}">
+                            Suivant
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-check-circle" style="font-size: 4rem; color: #28a745;"></i>
+                <h3 class="mt-3">Aucun prélèvement en attente</h3>
+                <p class="text-muted">Tous les prélèvements de votre périmètre sont validés !</p>
+                <a href="{{ url_for('dgm.hierarchical_dashboard') }}" class="btn btn-primary">
+                    <i class="bi bi-arrow-left"></i> Retour au tableau de bord
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar avec outils -->
+        <div class="col-lg-3">
+            <!-- Actions rapides -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-lightning"></i> Actions rapides
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-success btn-sm" onclick="selectAll()">
+                            <i class="bi bi-check-square"></i> Tout sélectionner
+                        </button>
+                        <button class="btn btn-outline-success btn-sm" onclick="selectByQuality('excellent')">
+                            <i class="bi bi-star"></i> Sélectionner qualité A+
+                        </button>
+                        <button class="btn btn-outline-warning btn-sm" onclick="selectByUrgency('high')">
+                            <i class="bi bi-exclamation-triangle"></i> Sélectionner urgents
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="clearSelection()">
+                            <i class="bi bi-x-square"></i> Désélectionner tout
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistiques de validation -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-graph-up"></i> Statistiques
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="validation-timeline">
+                        <div class="timeline-entry">
+                            <div class="timeline-icon status-pending">
+                                <i class="bi bi-hourglass"></i>
+                            </div>
+                            <div>
+                                <strong>{{ pagination.total }}</strong> en attente
+                                <br><small class="text-muted">Total à valider</small>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-entry">
+                            <div class="timeline-icon status-validated">
+                                <i class="bi bi-check"></i>
+                            </div>
+                            <div>
+                                <strong id="validatedToday">--</strong> validés aujourd'hui
+                                <br><small class="text-muted">Par vous</small>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-entry">
+                            <div class="timeline-icon bg-warning text-dark">
+                                <i class="bi bi-clock"></i>
+                            </div>
+                            <div>
+                                <strong id="avgValidationTime">--</strong> min
+                                <br><small class="text-muted">Temps moyen</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aide contextuelle -->
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-question-circle"></i> Guide de validation
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="small">
+                        <h6>Critères de validation :</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-check text-success"></i> Cohérence temporelle</li>
+                            <li><i class="bi bi-check text-success"></i> Valeurs dans plages normales</li>
+                            <li><i class="bi bi-check text-success"></i> Complétude des données</li>
+                            <li><i class="bi bi-check text-success"></i> Notes explicatives si nécessaire</li>
+                        </ul>
+                        
+                        <h6 class="mt-3">Indicateurs de qualité :</h6>
+                        <ul class="list-unstyled">
+                            <li><span class="quality-score quality-excellent">A+</span> Excellent</li>
+                            <li><span class="quality-score quality-good">B</span> Bon</li>
+                            <li><span class="quality-score quality-average">C</span> Moyen</li>
+                            <li><span class="quality-score quality-poor">D</span> Faible</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Panneau de validation en masse -->
+<div class="bulk-validation-panel" id="bulkPanel">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="mb-0">
+            <i class="bi bi-check-circle"></i> Validation en masse
+        </h6>
+        <span class="selection-counter" id="selectionCounter">0</span>
+    </div>
+    
+    <div class="d-grid gap-2">
+        <button class="btn btn-success btn-sm" onclick="bulkValidate()">
+            <i class="bi bi-check-all"></i> Valider la sélection
+        </button>
+        <button class="btn btn-warning btn-sm" onclick="bulkRequestModification()">
+            <i class="bi bi-pencil"></i> Demander modifications
+        </button>
+        <button class="btn btn-outline-secondary btn-sm" onclick="hideBulkPanel()">
+            <i class="bi bi-x"></i> Annuler
+        </button>
+    </div>
+    
+    <div class="mt-3">
+        <small class="text-muted">
+            <i class="bi bi-info-circle"></i> 
+            Les prélèvements sélectionnés seront traités simultanément.
+        </small>
+    </div>
+</div>
+
+<!-- Modales pour actions -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Rejeter le prélèvement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="rejectForm">
+                    <div class="mb-3">
+                        <label for="rejectReason" class="form-label">Raison du rejet *</label>
+                        <select class="form-select" id="rejectReason" required>
+                            <option value="">Sélectionnez une raison</option>
+                            <option value="values_inconsistent">Valeurs incohérentes</option>
+                            <option value="missing_data">Données manquantes</option>
+                            <option value="timing_issue">Problème de timing</option>
+                            <option value="instrument_error">Erreur d'instrument</option>
+                            <option value="other">Autre</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="rejectComment" class="form-label">Commentaire détaillé</label>
+                        <textarea class="form-control" id="rejectComment" rows="3" 
+                                  placeholder="Expliquez précisément le problème identifié..."></textarea>
+                    </div>
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        L'agent recevra une notification avec votre commentaire.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-danger" onclick="confirmReject()">
+                    <i class="bi bi-x-circle"></i> Confirmer le rejet
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let selectedPrelevements = new Set();
+let currentPrelevementId = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Gestionnaires d'événements pour les cases à cocher
+    document.querySelectorAll('.prelevement-select').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                selectedPrelevements.add(parseInt(this.value));
+                this.closest('.prelevement-card').classList.add('selected');
+            } else {
+                selectedPrelevements.delete(parseInt(this.value));
+                this.closest('.prelevement-card').classList.remove('selected');
+            }
+            updateBulkPanel();
+        });
+    });
+    
+    // Charger les statistiques
+    loadValidationStats();
+    
+    // Actualisation automatique
+    setInterval(loadValidationStats, 300000); // 5 minutes
+});
+
+function updateBulkPanel() {
+    const counter = document.getElementById('selectionCounter');
+    const panel = document.getElementById('bulkPanel');
+    
+    counter.textContent = selectedPrelevements.size;
+    
+    if (selectedPrelevements.size > 0) {
+        panel.classList.add('show');
+    } else {
+        panel.classList.remove('show');
+    }
+}
+
+function selectAll() {
+    document.querySelectorAll('.prelevement-select').forEach(checkbox => {
+        checkbox.checked = true;
+        selectedPrelevements.add(parseInt(checkbox.value));
+        checkbox.closest('.prelevement-card').classList.add('selected');
+    });
+    updateBulkPanel();
+}
+
+function clearSelection() {
+    document.querySelectorAll('.prelevement-select').forEach(checkbox => {
+        checkbox.checked = false;
+        checkbox.closest('.prelevement-card').classList.remove('selected');
+    });
+    selectedPrelevements.clear();
+    updateBulkPanel();
+}
+
+function selectByQuality(quality) {
+    clearSelection();
+    document.querySelectorAll(`.quality-${quality}`).forEach(element => {
+        const card = element.closest('.prelevement-card');
+        const checkbox = card.querySelector('.prelevement-select');
+        checkbox.checked = true;
+        selectedPrelevements.add(parseInt(checkbox.value));
+        card.classList.add('selected');
+    });
+    updateBulkPanel();
+}
+
+function selectByUrgency(urgency) {
+    clearSelection();
+    document.querySelectorAll(`.urgency-${urgency}`).forEach(element => {
+        const card = element.closest('.prelevement-card');
+        const checkbox = card.querySelector('.prelevement-select');
+        checkbox.checked = true;
+        selectedPrelevements.add(parseInt(checkbox.value));
+        card.classList.add('selected');
+    });
+    updateBulkPanel();
+}
+
+function validateSingle(id) {
+    if (confirm('Confirmer la validation de ce prélèvement ?')) {
+        fetch(`{{ url_for("dgm.validate_prelevement", id=0) }}`.replace('0', id), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Prélèvement validé avec succès', 'success');
+                removePrelevementFromList(id);
+                loadValidationStats();
+            } else {
+                showNotification('Erreur: ' + data.error, 'error');
+                <!-- Suite du JavaScript après showNotification('Erreur: ' + data.error, 'error'); -->
+            }
+        })
+        .catch(error => {
+            showNotification('Erreur de connexion', 'error');
+        });
+    }
+}
+
+function bulkValidate() {
+    if (selectedPrelevements.size === 0) {
+        showNotification('Aucun prélèvement sélectionné', 'warning');
+        return;
+    }
+    
+    if (confirm(`Valider ${selectedPrelevements.size} prélèvement(s) ?`)) {
+        fetch('{{ url_for("dgm.bulk_validate") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                prelevement_ids: Array.from(selectedPrelevements)
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(`${data.validated_count} prélèvements validés`, 'success');
+                // Retirer les prélèvements validés de la liste
+                selectedPrelevements.forEach(id => removePrelevementFromList(id));
+                selectedPrelevements.clear();
+                updateBulkPanel();
+                loadValidationStats();
+            } else {
+                showNotification('Erreur: ' + data.error, 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Erreur de connexion', 'error');
+        });
+    }
+}
+
+function rejectPrelevement(id) {
+    currentPrelevementId = id;
+    const modal = new bootstrap.Modal(document.getElementById('rejectModal'));
+    modal.show();
+}
+
+function confirmReject() {
+    const reason = document.getElementById('rejectReason').value;
+    const comment = document.getElementById('rejectComment').value;
+    
+    if (!reason) {
+        showNotification('Veuillez sélectionner une raison', 'warning');
+        return;
+    }
+    
+    fetch(`{{ url_for("dgm.reject_prelevement", id=0) }}`.replace('0', currentPrelevementId), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            reason: reason,
+            comment: comment
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Prélèvement rejeté', 'success');
+            removePrelevementFromList(currentPrelevementId);
+            loadValidationStats();
+            bootstrap.Modal.getInstance(document.getElementById('rejectModal')).hide();
+        } else {
+            showNotification('Erreur: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Erreur de connexion', 'error');
+    });
+}
+
+function requestModification(id) {
+    const comment = prompt('Précisez les modifications requises :');
+    if (comment && comment.trim()) {
+        fetch(`{{ url_for("dgm.request_modification", id=0) }}`.replace('0', id), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                comment: comment
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Demande de modification envoyée', 'success');
+                removePrelevementFromList(id);
+            } else {
+                showNotification('Erreur: ' + data.error, 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Erreur de connexion', 'error');
+        });
+    }
+}
+
+function bulkRequestModification() {
+    if (selectedPrelevements.size === 0) {
+        showNotification('Aucun prélèvement sélectionné', 'warning');
+        return;
+    }
+    
+    const comment = prompt(`Précisez les modifications requises pour ${selectedPrelevements.size} prélèvement(s) :`);
+    if (comment && comment.trim()) {
+        fetch('{{ url_for("dgm.bulk_request_modification") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                prelevement_ids: Array.from(selectedPrelevements),
+                comment: comment
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(`Demandes envoyées pour ${data.count} prélèvements`, 'success');
+                selectedPrelevements.forEach(id => removePrelevementFromList(id));
+                selectedPrelevements.clear();
+                updateBulkPanel();
+            } else {
+                showNotification('Erreur: ' + data.error, 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Erreur de connexion', 'error');
+        });
+    }
+}
+
+function viewHistory(id) {
+    // Ouvrir une modale ou rediriger vers l'historique
+    window.open(`{{ url_for("dgm.prelevement_history", id=0) }}`.replace('0', id), '_blank');
+}
+
+function removePrelevementFromList(id) {
+    const card = document.querySelector(`[data-id="${id}"]`);
+    if (card) {
+        card.style.transition = 'all 0.3s ease';
+        card.style.opacity = '0';
+        card.style.transform = 'translateX(100px)';
+        setTimeout(() => {
+            card.remove();
+            // Vérifier s'il reste des prélèvements
+            if (document.querySelectorAll('.prelevement-card').length === 0) {
+                location.reload(); // Recharger pour afficher le message "aucun prélèvement"
+            }
+        }, 300);
+    }
+}
+
+function hideBulkPanel() {
+    clearSelection();
+}
+
+function loadValidationStats() {
+    fetch('{{ url_for("dgm.get_validation_stats") }}')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('validatedToday').textContent = data.validated_today || '0';
+            document.getElementById('avgValidationTime').textContent = data.avg_validation_time || '0';
+        })
+        .catch(error => console.error('Erreur chargement stats:', error));
+}
+
+function showNotification(message, type = 'info') {
+    // Créer une notification toast
+    const toastHtml = `
+        <div class="toast position-fixed top-0 end-0 m-3" role="alert" style="z-index: 9999;">
+            <div class="toast-header bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : type === 'warning' ? 'warning' : 'info'} text-white">
+                <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'x-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+                <strong class="me-auto">Notification</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        </div>
+    `;
+    
+    // Ajouter au DOM
+    const toastContainer = document.createElement('div');
+    toastContainer.innerHTML = toastHtml;
+    document.body.appendChild(toastContainer);
+    
+    // Afficher le toast
+    const toast = new bootstrap.Toast(toastContainer.querySelector('.toast'), {
+        autohide: true,
+        delay: 5000
+    });
+    toast.show();
+    
+    // Supprimer après disparition
+    toastContainer.querySelector('.toast').addEventListener('hidden.bs.toast', function() {
+        toastContainer.remove();
+    });
+}
+
+// Fonction pour analyser la qualité des données
+function analyzeDataQuality(prelevement) {
+    let score = 100;
+    let issues = [];
+    
+    // Vérifier la complétude
+    if (!prelevement.humidity) score -= 10;
+    if (!prelevement.pressure) score -= 10;
+    if (!prelevement.wind_speed) score -= 10;
+    
+    // Vérifier les plages de valeurs
+    if (prelevement.temperature < 15 || prelevement.temperature > 40) {
+        score -= 20;
+        issues.push('Température hors plage normale');
+    }
+    
+    if (prelevement.humidity && (prelevement.humidity < 30 || prelevement.humidity > 100)) {
+        score -= 20;
+        issues.push('Humidité hors plage normale');
+    }
+    
+    if (prelevement.pressure && (prelevement.pressure < 990 || prelevement.pressure > 1030)) {
+        score -= 15;
+        issues.push('Pression atmosphérique atypique');
+    }
+    
+    // Retourner le score et la classe CSS
+    if (score >= 90) return { score: 'A+', class: 'excellent' };
+    if (score >= 75) return { score: 'B', class: 'good' };
+    if (score >= 60) return { score: 'C', class: 'average' };
+    return { score: 'D', class: 'poor', issues: issues };
+}
+
+// Raccourcis clavier
+document.addEventListener('keydown', function(e) {
+    // Ctrl+A pour sélectionner tout
+    if (e.ctrlKey && e.key === 'a' && !e.target.matches('input, textarea')) {
+        e.preventDefault();
+        selectAll();
+    }
+    
+    // Ctrl+V pour valider la sélection
+    if (e.ctrlKey && e.key === 'v' && selectedPrelevements.size > 0) {
+        e.preventDefault();
+        bulkValidate();
+    }
+    
+    // Escape pour désélectionner
+    if (e.key === 'Escape') {
+        clearSelection();
+    }
+});
+
+// Export des données sélectionnées
+function exportSelected() {
+    if (selectedPrelevements.size === 0) {
+        showNotification('Aucun prélèvement sélectionné', 'warning');
+        return;
+    }
+    
+    const url = `{{ url_for("dgm.export_prelevements") }}?ids=${Array.from(selectedPrelevements).join(',')}`;
+    window.open(url, '_blank');
+}
+
+// Fonction pour l'analyse en temps réel
+function initializeRealTimeAnalysis() {
+    // WebSocket ou polling pour les nouveaux prélèvements
+    setInterval(() => {
+        fetch('{{ url_for("dgm.check_new_prelevements") }}')
+            .then(response => response.json())
+            .then(data => {
+                if (data.new_count > 0) {
+                    showNotification(`${data.new_count} nouveau(x) prélèvement(s) en attente`, 'info');
+                    // Optionnel : recharger la page ou ajouter dynamiquement
+                }
+            })
+            .catch(error => console.error('Erreur vérification nouveaux prélèvements:', error));
+    }, 60000); // Vérifier toutes les minutes
+}
+
+// Initialiser l'analyse en temps réel
+initializeRealTimeAnalysis();
+</script>
+{% endblock %}

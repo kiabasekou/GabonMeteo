@@ -1,0 +1,528 @@
+<!-- app/templates/metpy_analysis.html -->
+{% extends "base.html" %}
+
+{% block title %}Analyses MetPy - GabonMétéo+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    .comfort-indicator {
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .metpy-card {
+        transition: all 0.3s ease;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .metpy-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    }
+    
+    .heat-index-gauge {
+        position: relative;
+        width: 200px;
+        height: 200px;
+        margin: 0 auto;
+    }
+    
+    .storm-risk-indicator {
+        text-align: center;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 10px 0;
+    }
+    
+    .comfort-map {
+        height: 450px;
+        border-radius: 8px;
+    }
+    
+    .metpy-metric {
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+        text-align: center;
+    }
+    
+    .metpy-value {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .metpy-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>🌡️ Analyses Météorologiques Avancées (MetPy)</h1>
+<p>Analyses thermodynamiques et indices de confort adaptés au climat gabonais.</p>
+
+<!-- Sélecteur de station -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Sélection de station</h5>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-end">
+                    <div class="col-md-8">
+                        <label for="stationSelect" class="form-label">Station météorologique</label>
+                        <select class="form-select" id="stationSelect">
+                            <option value="">Sélectionnez une station</option>
+                            <!-- Les options seront remplies par JavaScript -->
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-primary w-100" onclick="loadStationAnalysis()">
+                            <i class="bi bi-calculator"></i> Analyser
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Résultats d'analyse -->
+<div id="analysisResults" style="display: none;">
+    <!-- Indicateurs principaux -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="metpy-metric">
+                <div class="metpy-value text-danger" id="heatIndexValue">--</div>
+                <div class="metpy-label">Indice de Chaleur (°C)</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metpy-metric">
+                <div class="metpy-value text-info" id="dewpointValue">--</div>
+                <div class="metpy-label">Point de Rosée (°C)</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metpy-metric">
+                <div class="metpy-value text-success" id="comfortValue">--</div>
+                <div class="metpy-label">Niveau de Confort</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metpy-metric">
+                <div class="metpy-value text-warning" id="stormRiskValue">--</div>
+                <div class="metpy-label">Risque d'Orage</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Analyse détaillée -->
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card metpy-card h-100">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">🌡️ Indice de Chaleur</h5>
+                </div>
+                <div class="card-body">
+                    <div class="heat-index-gauge" id="heatIndexGauge">
+                        <canvas width="200" height="200"></canvas>
+                    </div>
+                    <div class="text-center mt-3">
+                        <p id="heatIndexDescription">--</p>
+                        <div class="alert alert-info" id="heatIndexAlert">
+                            L'indice de chaleur combine température et humidité pour évaluer la sensation thermique réelle.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card metpy-card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">😌 Confort Climatique</h5>
+                </div>
+                <div class="card-body">
+                    <div class="comfort-indicator" id="comfortIndicator">
+                        <h3 id="comfortLevel">--</h3>
+                        <p id="comfortDescription">--</p>
+                    </div>
+                    <div id="comfortRecommendations">
+                        <!-- Les recommandations seront ajoutées ici -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card metpy-card h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">⛈️ Potentiel Orageux</h5>
+                </div>
+                <div class="card-body">
+                    <div class="storm-risk-indicator" id="stormIndicator">
+                        <h4 id="stormRiskLevel">--</h4>
+                        <p id="stormRiskDescription">--</p>
+                    </div>
+                    <div>
+                        <h6>Facteurs de risque:</h6>
+                        <ul id="stormFactors">
+                            <!-- Les facteurs seront ajoutés ici -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Carte de confort -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">🗺️ Carte Nationale de Confort Climatique</h5>
+            </div>
+            <div class="card-body">
+                <div id="comfortMap" class="comfort-map"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Informations MetPy -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">📊 À propos des calculs MetPy</h5>
+            </div>
+            <div class="card-body">
+                <div class="accordion" id="metpyInfoAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#heatIndexInfo">
+                                Indice de Chaleur
+                            </button>
+                        </h2>
+                        <div id="heatIndexInfo" class="accordion-collapse collapse show">
+                            <div class="accordion-body">
+                                <p>L'indice de chaleur combine la température de l'air et l'humidité relative pour déterminer la température ressentie par le corps humain.</p>
+                                <ul>
+                                    <li><strong>&lt; 27°C :</strong> Confortable</li>
+                                    <li><strong>27-32°C :</strong> Prudence recommandée</li>
+                                    <li><strong>32-40°C :</strong> Attention extrême</li>
+                                    <li><strong>&gt; 40°C :</strong> Danger - coup de chaleur possible</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dewpointInfo">
+                                Point de Rosée
+                            </button>
+                        </h2>
+                        <div id="dewpointInfo" class="accordion-collapse collapse">
+                            <div class="accordion-body">
+                                <p>Le point de rosée est la température à laquelle l'air devient saturé en vapeur d'eau et où la condensation commence.</p>
+                                <ul>
+                                    <li><strong>&lt; 16°C :</strong> Air sec, sensation agréable</li>
+                                    <li><strong>16-20°C :</strong> Confortable pour la plupart</li>
+                                    <li><strong>20-24°C :</strong> Légèrement humide, moins confortable</li>
+                                    <li><strong>&gt; 24°C :</strong> Très humide, oppressant</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#stormInfo">
+                                Potentiel Orageux
+                            </button>
+                        </h2>
+                        <div id="stormInfo" class="accordion-collapse collapse">
+                            <div class="accordion-body">
+                                <p>Notre algorithme évalue le potentiel de formation d'orages en analysant plusieurs paramètres atmosphériques adaptés au climat tropical gabonais.</p>
+                                <p><strong>Facteurs pris en compte :</strong></p>
+                                <ul>
+                                    <li>Température de surface</li>
+                                    <li>Humidité relative</li>
+                                    <li>Pression atmosphérique</li>
+                                    <li>Indice de chaleur</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadStations();
+    loadComfortMap();
+});
+
+function loadStations() {
+    fetch('/api/stations')
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('stationSelect');
+            data.stations.forEach(station => {
+                const option = document.createElement('option');
+                option.value = station.id;
+                option.textContent = `${station.name} (${station.region})`;
+                select.appendChild(option);
+            });
+        })
+        .catch(error => console.error('Erreur:', error));
+}
+
+function loadStationAnalysis() {
+    const stationId = document.getElementById('stationSelect').value;
+    if (!stationId) {
+        alert('Veuillez sélectionner une station');
+        return;
+    }
+    
+    fetch(`/api/metpy/analysis/${stationId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Erreur: ' + data.error);
+                return;
+            }
+            
+            displayAnalysisResults(data);
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            alert('Erreur lors du chargement de l\'analyse');
+        });
+}
+
+function displayAnalysisResults(data) {
+    const analysis = data.analysis;
+    
+    // Mettre à jour les métriques principales
+    document.getElementById('heatIndexValue').textContent = analysis.heat_index + '°C';
+    document.getElementById('dewpointValue').textContent = analysis.dewpoint + '°C';
+    document.getElementById('comfortValue').textContent = analysis.comfort_index.level;
+    document.getElementById('stormRiskValue').textContent = analysis.storm_potential.risk_level;
+    
+    // Indice de chaleur
+    updateHeatIndexGauge(analysis.heat_index);
+    
+    // Confort climatique
+    const comfortIndicator = document.getElementById('comfortIndicator');
+    comfortIndicator.className = `comfort-indicator bg-${analysis.comfort_index.color}`;
+    if (analysis.comfort_index.color === 'warning' || analysis.comfort_index.color === 'info') {
+        comfortIndicator.classList.add('text-dark');
+    } else {
+        comfortIndicator.classList.add('text-white');
+    }
+    
+    document.getElementById('comfortLevel').textContent = analysis.comfort_index.level;
+    document.getElementById('comfortDescription').textContent = analysis.comfort_index.description;
+    
+    // Recommandations
+    const recommendationsDiv = document.getElementById('comfortRecommendations');
+    recommendationsDiv.innerHTML = '<h6>Recommandations:</h6><ul>' + 
+        analysis.recommendations.map(rec => `<li>${rec}</li>`).join('') + '</ul>';
+    
+    // Potentiel orageux
+    const stormIndicator = document.getElementById('stormIndicator');
+    stormIndicator.className = `storm-risk-indicator bg-${analysis.storm_potential.color}`;
+    if (analysis.storm_potential.color === 'warning' || analysis.storm_potential.color === 'info') {
+        stormIndicator.classList.add('text-dark');
+    } else {
+        stormIndicator.classList.add('text-white');
+    }
+    
+    document.getElementById('stormRiskLevel').textContent = analysis.storm_potential.risk_level;
+    document.getElementById('stormRiskDescription').textContent = 
+        `Score de risque: ${analysis.storm_potential.risk_score}/10`;
+    
+    // Facteurs de risque
+    const factorsList = document.getElementById('stormFactors');
+    factorsList.innerHTML = '';
+    if (analysis.storm_potential.risk_factors.length > 0) {
+        analysis.storm_potential.risk_factors.forEach(factor => {
+            const li = document.createElement('li');
+            li.textContent = factor;
+            factorsList.appendChild(li);
+        });
+    } else {
+        const li = document.createElement('li');
+        li.textContent = 'Aucun facteur de risque détecté';
+        factorsList.appendChild(li);
+    }
+    
+    // Afficher les résultats
+    document.getElementById('analysisResults').style.display = 'block';
+    document.getElementById('analysisResults').scrollIntoView({ behavior: 'smooth' });
+}
+
+function updateHeatIndexGauge(heatIndex) {
+    const canvas = document.querySelector('#heatIndexGauge canvas');
+    const ctx = canvas.getContext('2d');
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const radius = 80;
+    
+    // Effacer le canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Dessiner l'arc de fond
+    ctx.strokeStyle = '#e0e0e0';
+    ctx.lineWidth = 15;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0.75 * Math.PI, 0.25 * Math.PI);
+    ctx.stroke();
+    
+    // Calculer l'angle pour la valeur (de 20°C à 50°C)
+    const minTemp = 20;
+    const maxTemp = 50;
+    const normalizedValue = Math.max(0, Math.min(1, (heatIndex - minTemp) / (maxTemp - minTemp)));
+    const angle = 0.75 * Math.PI + normalizedValue * 1.5 * Math.PI;
+    
+    // Couleur basée sur la température
+    let color;
+    if (heatIndex < 27) color = '#4CAF50';      // Vert
+    else if (heatIndex < 32) color = '#FFC107'; // Jaune
+    else if (heatIndex < 40) color = '#FF9800'; // Orange
+    else color = '#F44336';                     // Rouge
+    
+    // Dessiner l'arc de valeur
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 15;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0.75 * Math.PI, angle);
+    ctx.stroke();
+    
+    // Afficher la valeur
+    ctx.fillStyle = '#333';
+    ctx.font = 'bold 20px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(heatIndex + '°C', centerX, centerY + 5);
+    
+    // Afficher "Indice de Chaleur"
+    ctx.font = '12px Arial';
+    ctx.fillText('Indice de Chaleur', centerX, centerY + 25);
+}
+
+function loadComfortMap() {
+    // Initialiser la carte
+    const map = L.map('comfortMap').setView([0.4162, 9.4673], 6);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // Charger les données de confort
+    fetch('/api/metpy/comfort-map')
+        .then(response => response.json())
+        .then(data => {
+            data.comfort_map.forEach(station => {
+                const comfort = station.comfort_index;
+                const heatIndex = station.heat_index;
+                
+                // Couleur basée sur le niveau de confort
+                let color;
+                switch(comfort.color) {
+                    case 'success': color = '#28a745'; break;
+                    case 'info': color = '#17a2b8'; break;
+                    case 'warning': color = '#ffc107'; break;
+                    case 'danger': color = '#dc3545'; break;
+                    default: color = '#6c757d';
+                }
+                
+                // Rayon basé sur l'indice de chaleur
+                const radius = Math.max(15000, heatIndex * 800);
+                
+                // Créer le cercle
+                const circle = L.circle([station.station.latitude, station.station.longitude], {
+                    color: color,
+                    fillColor: color,
+                    fillOpacity: 0.6,
+                    radius: radius,
+                    weight: 2
+                }).addTo(map);
+                
+                // Popup avec informations
+                const popupContent = `
+                    <div class="text-center">
+                        <h6>${station.station.name}</h6>
+                        <p><strong>Confort:</strong> ${comfort.level}</p>
+                        <p><strong>Indice de chaleur:</strong> ${heatIndex}°C</p>
+                        <p><strong>Risque d'orage:</strong> ${station.storm_risk}</p>
+                        <div class="badge bg-${comfort.color}">${comfort.description}</div>
+                    </div>
+                `;
+                
+                circle.bindPopup(popupContent);
+                
+                // Marqueur avec nom de la station
+                const marker = L.marker([station.station.latitude, station.station.longitude])
+                    .addTo(map)
+                    .bindTooltip(station.station.name, {permanent: true, direction: 'top'});
+            });
+            
+            // Ajouter une légende
+            addComfortLegend(map);
+        })
+        .catch(error => console.error('Erreur carte de confort:', error));
+}
+
+function addComfortLegend(map) {
+    const legend = L.control({position: 'bottomright'});
+    
+    legend.onAdd = function(map) {
+        const div = L.DomUtil.create('div', 'legend');
+        div.innerHTML = `
+            <div style="background: white; padding: 10px; border-radius: 5px; box-shadow: 0 0 15px rgba(0,0,0,0.2);">
+                <h6>Niveau de Confort</h6>
+                <div style="display: flex; align-items: center; margin: 5px 0;">
+                    <div style="background: #28a745; width: 15px; height: 15px; border-radius: 50%; margin-right: 8px;"></div>
+                    Très Confortable
+                </div>
+                <div style="display: flex; align-items: center; margin: 5px 0;">
+                    <div style="background: #17a2b8; width: 15px; height: 15px; border-radius: 50%; margin-right: 8px;"></div>
+                    Confortable
+                </div>
+                <div style="display: flex; align-items: center; margin: 5px 0;">
+                    <div style="background: #ffc107; width: 15px; height: 15px; border-radius: 50%; margin-right: 8px;"></div>
+                    Modérément Chaud
+                </div>
+                <div style="display: flex; align-items: center; margin: 5px 0;">
+                    <div style="background: #dc3545; width: 15px; height: 15px; border-radius: 50%; margin-right: 8px;"></div>
+                    Chaud/Très Chaud
+                </div>
+                <small>Taille = Indice de chaleur</small>
+            </div>
+        `;
+        return div;
+    };
+    
+    legend.addTo(map);
+}
+</script>
+{% endblock %}
